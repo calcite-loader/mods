@@ -4,9 +4,9 @@
 
 const settings = api.registerSettings({
   decimals: {
-    type: "toggle",
-    name: "Show Decimals",
-    default: false,
+    type: "number",
+    name: "Decimal Places",
+    default: 0,
   },
 });
 
@@ -20,14 +20,17 @@ api.onStart(() => {
   ).setOrigin(0.5, 0);
 
   window.gdScene.events.on("update", () => {
-    percentText.setText(
-      Math.max(
-        Math.floor(
-          window.gdScene._playerWorldX / window.gdScene._level.endXPos *
-            (settings.decimals ? 1000 : 100),
-        ) / (settings.decimals ? 10 : 1),
-        0,
-      ).toFixed(settings.decimals ? 1 : 0) + "%",
-    );
+    const places = Math.max(0, settings.decimals);
+    const multiplier = Math.pow(10, places);
+
+    const progress =
+      (window.gdScene._playerWorldX / window.gdScene._level.endXPos) * 100;
+
+    const formattedPercent = (Math.max(
+      Math.floor(progress * multiplier) / multiplier,
+      0,
+    )).toFixed(places);
+
+    percentText.setText(formattedPercent + "%");
   });
 });
