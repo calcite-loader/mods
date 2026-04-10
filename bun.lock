@@ -4,7 +4,7 @@
     "": {
       "name": "calcite-mods",
       "devDependencies": {
-        "@calcite-loader/types": "^0.3.4",
+        "@calcite-loader/types": "0.4.0",
         "@types/bun": "^1.3.11",
       },
       "peerDependencies": {
@@ -13,7 +13,7 @@
     },
   },
   "packages": {
-    "@calcite-loader/types": ["@calcite-loader/types@0.3.4", "", { "peerDependencies": { "phaser": "~3.90.0" } }, "sha512-XxPHrYQVrIxJUUo+f/BytV7B8/e1cbmr0IM1t18crsnqv4JdwsWBu0689bpDjRPkoYl2rFkB/hKZ27Dvhv3pag=="],
+    "@calcite-loader/types": ["@calcite-loader/types@0.4.0", "", { "peerDependencies": { "phaser": "~3.90.0" } }, "sha512-h9b5KQhUrYcgN5GHqzj/UhH4QYakznrP6Q8r9SDv95TgWFmnVmpo4JISm8H7/m0/nsm9OphnOSg6vWawalCS1w=="],
 
     "@types/bun": ["@types/bun@1.3.11", "", { "dependencies": { "bun-types": "1.3.11" } }, "sha512-5vPne5QvtpjGpsGYXiFyycfpDF2ECyPcTSsFBMa0fraoxiQyMJ3SmuQIGhzPg2WJuWxVBoxWJ2kClYTcw/4fAg=="],
 
