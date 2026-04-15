@@ -32,15 +32,18 @@ enum ObjectType {
 
 declare global {
   interface Window {
-    setPlayerSpeed: (newSpeed: number) => void;
-    objectDefinitions: Record<number, {
-      type: ObjectType;
-      frame: string;
-      gridW: number;
-      gridH: number;
-    }>;
+    _editor: {
+      setPlayerSpeed: (newSpeed: number) => void;
+      objectDefinitions: Record<number, {
+        type: ObjectType;
+        frame: string;
+        gridW: number;
+        gridH: number;
+      }>;
+    };
   }
 }
+(window._editor as any) = {};
 
 const defaultSpeed = 11.540004;
 
@@ -50,7 +53,7 @@ api.patchScript(
   (code) => {
     code = code.replace(
       new RegExp(`,\\s*(\\w+)\\s*=\\s*${defaultSpeed},\\s*`),
-      `; let $1 = ${defaultSpeed}; window.setPlayerSpeed = (newSpeed) => { $1 = newSpeed }; const `,
+      `; let $1 = ${defaultSpeed}; window._editor.setPlayerSpeed = (newSpeed) => { $1 = newSpeed }; const `,
     );
 
     return code;
@@ -63,7 +66,7 @@ let playerY = 30;
 let playerVelY = 0;
 
 api.onStart(() => {
-  window.setPlayerSpeed(0);
+  window._editor.setPlayerSpeed(0);
 
   Object.defineProperty(window.gdScene._state, "y", {
     get: () => {
@@ -109,7 +112,9 @@ api.onStart(() => {
   const isDownDown = () => downKey.isDown || sKey.isDown;
 
   const updateMovement = () => {
-    window.setPlayerSpeed(defaultSpeed * (+isRightDown() - +isLeftDown()));
+    window._editor.setPlayerSpeed(
+      defaultSpeed * (+isRightDown() - +isLeftDown()),
+    );
     playerVelY = defaultSpeed * (+isUpDown() - +isDownDown());
   };
 
@@ -123,25 +128,28 @@ api.onUpdate(() => {
   playerY += playerVelY;
 });
 
-// Make object definitions globally available via window.objectDefinitions
+// Make object definitions globally available via window._editor.objectDefinitions
 api.patchScript("index-game.js", (code) => {
   const match = code.match(
     /,\s*(\w+)\s*=\s*{\s*0x1:\s*{\s*'type'\s*:\s*\w+\s*,\s*'frame'/,
   );
   if (!match || !match[1]) return code;
   const index = code.indexOf(";", match.index) + 1;
-  return code.slice(0, index) + `window.objectDefinitions = ${match[1]};` +
+  return code.slice(0, index) +
+    `window._editor.objectDefinitions = ${match[1]};` +
     code.slice(index);
 });
 
-const objectCycles: Record<number, (keyof typeof window.objectDefinitions)[]> =
-  {
-    1: [1, 2, 3, 4, 5, 6, 7, 40, 83, 195, 196],
-    2: [8, 9, 39, 61, 103, 392],
-    3: [12, 13],
-    4: [15, 16, 17],
-    5: [18, 19, 20, 21, 41, 50],
-  } as const;
+const objectCycles: Record<
+  number,
+  (keyof typeof window._editor.objectDefinitions)[]
+> = {
+  1: [1, 2, 3, 4, 5, 6, 7, 40, 83, 195, 196],
+  2: [8, 9, 39, 61, 103, 392],
+  3: [12, 13],
+  4: [15, 16, 17],
+  5: [18, 19, 20, 21, 41, 50],
+} as const;
 let cycleIndex = 0;
 let currentCycle: keyof typeof objectCycles = 1;
 
@@ -182,7 +190,8 @@ api.onStart(() => {
     window.gdScene,
     0,
     0,
-    window.objectDefinitions[objectCycles[currentCycle]?.[cycleIndex]!]?.frame!,
+    window._editor.objectDefinitions[objectCycles[currentCycle]?.[cycleIndex]!]
+      ?.frame!,
   );
   previewImage.alpha = 0.25;
 
@@ -198,7 +207,8 @@ api.onStart(() => {
 
 const updatePreview = () => {
   previewImage.setFrame(
-    window.objectDefinitions[objectCycles[currentCycle]?.[cycleIndex]!]?.frame!,
+    window._editor.objectDefinitions[objectCycles[currentCycle]?.[cycleIndex]!]
+      ?.frame!,
   );
 };
 
@@ -215,7 +225,7 @@ const placedObjects: PlacedObject[] = [];
 
 const addObject = () => {
   const definition = window
-    .objectDefinitions[objectCycles[currentCycle]?.[cycleIndex]!]!;
+    ._editor.objectDefinitions[objectCycles[currentCycle]?.[cycleIndex]!]!;
   const isPortal = (definition.type === ObjectType.PORTAL ||
     definition.type === ObjectType.SPEED) &&
     definition.frame.includes("_front_");

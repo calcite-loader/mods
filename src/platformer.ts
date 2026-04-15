@@ -5,14 +5,17 @@
 
 declare global {
   interface Window {
-    setPlayerSpeed: (newSpeed: number) => void;
-    playerDirection: 1 | -1 | 0;
+    _platformer: {
+      setPlayerSpeed: (newSpeed: number) => void;
+      playerDirection: 1 | -1 | 0;
+    };
   }
 }
+(window._platformer as any) = {};
 
 const defaultSpeed = 11.540004;
 
-window.playerDirection = 0;
+window._platformer.playerDirection = 0;
 
 api.patchScript(
   "index-game.js",
@@ -31,7 +34,7 @@ api.patchMethod("runRotateAction", (code) => {
 });
 
 api.onStart(() => {
-  window.setPlayerSpeed(0);
+  window._platformer.setPlayerSpeed(0);
 
   const leftKey = window.gdScene.input.keyboard!.addKey(
     Phaser.Input.Keyboard.KeyCodes.LEFT,
@@ -54,16 +57,18 @@ api.onStart(() => {
 
   const updateMovement = () => {
     if (isLeftDown() && isRightDown()) {
-      window.playerDirection = 0;
+      window._platformer.playerDirection = 0;
     } else if (isLeftDown()) {
-      window.playerDirection = -1;
+      window._platformer.playerDirection = -1;
     } else if (isRightDown()) {
-      window.playerDirection = 1;
+      window._platformer.playerDirection = 1;
     } else {
-      window.playerDirection = 0;
+      window._platformer.playerDirection = 0;
     }
 
-    window.setPlayerSpeed(defaultSpeed * window.playerDirection);
+    window._platformer.setPlayerSpeed(
+      defaultSpeed * window._platformer.playerDirection,
+    );
   };
 
   [leftKey, rightKey, aKey, dKey].forEach((key) => {
