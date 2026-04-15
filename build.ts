@@ -26,6 +26,7 @@ const manifest = {
       entrypoints: [inputPath],
       outdir: "./dist",
       naming: "[name].[ext]",
+      minify: true,
     });
 
     if (!result.success) {
