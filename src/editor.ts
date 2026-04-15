@@ -270,7 +270,7 @@ const addObject = () => {
   );
   window.gdScene._level._addVisualSprite(sprite, flaggedDefinition);
   sprite._eeWorldX = worldX;
-  sprite._eeBaseY = snapToGrid(pointer.y, true);
+  sprite._eeBaseY = worldY;
   window.gdScene._level._addToSection(sprite);
 
   sprite.placedObjectIndex = placedObjects.length - 1;
