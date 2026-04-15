@@ -133,7 +133,6 @@ window._resurrection.onPadCollision = () => {
   window.gdScene._state.canJump = false;
   window.gdScene._state.onGround = false;
   window.gdScene._state.yVelocity = 32 * window.gdScene._player.flipMod();
-  window.gdScene._state.wasBoosted = true;
   window.gdScene._player.runRotateAction();
 };
 
