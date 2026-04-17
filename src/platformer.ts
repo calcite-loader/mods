@@ -22,7 +22,7 @@ api.patchScript(
   (code) => {
     code = code.replace(
       new RegExp(`,\\s*(\\w+)\\s*=\\s*${defaultSpeed},\\s*`), // Def not ripped out of the physics mod
-      `; let $1 = ${defaultSpeed}; window.setPlayerSpeed = (newSpeed) => { $1 = newSpeed }; const `,
+      `; let $1 = ${defaultSpeed}; window._platformer.setPlayerSpeed = (newSpeed) => { $1 = newSpeed }; const `,
     );
 
     return code;
