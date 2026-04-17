@@ -10,6 +10,11 @@ const extractHeader = async (filePath: string): Promise<string> => {
 };
 
 const isCI = Bun.argv.includes("--ci");
+
+let isDebug = !isCI;
+if (Bun.argv.includes("--release")) isDebug = false;
+if (Bun.argv.includes("--debug")) isDebug = true;
+
 const manifest = {
   mods: [] as { id: string; name: string; downloadUrl: string }[],
 };
@@ -18,6 +23,8 @@ const manifest = {
   const files = [...new Glob("*.ts").scanSync("src/")];
 
   for (const file of files) {
+    if (file.endsWith(".d.ts")) continue;
+
     const id = path.parse(file).name;
     const inputPath = path.join("src", file);
     const outputPath = path.join("dist", `${id}.js`);
@@ -26,7 +33,10 @@ const manifest = {
       entrypoints: [inputPath],
       outdir: "./dist",
       naming: "[name].[ext]",
-      minify: true,
+      minify: !isDebug,
+      define: {
+        BUILD_MODE: isDebug ? "'debug'" : "'release'",
+      },
     });
 
     if (!result.success) {

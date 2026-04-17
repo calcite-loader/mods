@@ -9,5 +9,8 @@
   },
   "license": "BSD-2-Clause",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "peerjs": "^1.5.5"
+  }
 }
