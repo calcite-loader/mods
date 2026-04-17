@@ -30,7 +30,10 @@ api.patchScript(
 );
 
 api.patchMethod("runRotateAction", (code) => {
-  return code.replace("Math['PI']", "Math['PI']*window.playerDirection");
+  return code.replace(
+    "Math['PI']",
+    "Math['PI']*window._platformer.playerDirection",
+  );
 });
 
 api.onStart(() => {
