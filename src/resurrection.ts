@@ -178,7 +178,7 @@ api.patchMethod("checkCollisions", (code) => {
 
   code = code.replace(
     "&&(this['p']",
-    "&&!this.p.gravityFlipped&&(this['p']",
+    "&&(!this.p.gravityFlipped||this.p.isFlying)&&(this['p']",
   );
 
   return code.replace(
