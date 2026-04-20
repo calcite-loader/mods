@@ -3,6 +3,8 @@
  * @needsRefresh true
  */
 
+import type { GameObject } from "@calcite-loader/types";
+
 enum ObjectType {
   SOLID = "solid",
   HAZARD = "hazard",
@@ -21,6 +23,7 @@ interface ObjectDefinition {
   frame: string;
   gridW: number;
   gridH: number;
+  sub?: string;
 }
 
 declare global {
@@ -52,6 +55,13 @@ declare global {
       ) => void;
       onRingCollision: () => boolean;
 
+      addPortalCollider: (
+        definition: ObjectDefinition,
+        x: number,
+        y: number,
+      ) => void;
+      onPortalCollision: (object: GameObject) => void;
+
       createImageFromAtlas: typeof window.createImageFromAtlas;
     };
   }
@@ -75,6 +85,7 @@ Object.defineProperty(window._resurrection, "objectDefinitions", {
   get: () => _objectDefinitions,
   set: (definitions: typeof window._resurrection.objectDefinitions) => {
     if (!_objectDefinitions) {
+      // Fix Yellow Pad Stuff
       definitions[35]!.gridH = 0.13333334028720856;
       definitions[35]!.gridW = 0.8333333134651184;
     }
@@ -114,6 +125,22 @@ window._resurrection.addRingCollider = (
   window.gdScene._level._addCollisionToSection(object);
 };
 
+window._resurrection.addPortalCollider = (
+  definition: ObjectDefinition,
+  x: number,
+  y: number,
+) => {
+  const object = new window._resurrection.GameObject(
+    "portal_" + definition.sub,
+    x,
+    y,
+    90,
+    definition.gridH * 60,
+  );
+  window.gdScene._level.objects.push(object);
+  window.gdScene._level._addCollisionToSection(object);
+};
+
 let gameObjectClassName: string;
 
 api.patchMethod("_spawnLevelObjects", (code) => {
@@ -130,7 +157,7 @@ api.patchMethod("_spawnLevelObjects", (code) => {
 
   return `${
     code.slice(0, index)
-  } else if (${definitionVarName}.type === "${ObjectType.PAD}") { window._resurrection.addPadCollider(${definitionVarName}, ${xName}, ${yName}) } else if (${definitionVarName}.type === "${ObjectType.RING}") { window._resurrection.addRingCollider(${definitionVarName}, ${xName}, ${yName}) } ${
+  } else if (${definitionVarName}.type === "${ObjectType.PAD}") { window._resurrection.addPadCollider(${definitionVarName}, ${xName}, ${yName}) } else if (${definitionVarName}.type === "${ObjectType.RING}") { window._resurrection.addRingCollider(${definitionVarName}, ${xName}, ${yName}) } else if (${definitionVarName}.type === "${ObjectType.PORTAL}" && ["gravity_flip", "gravity_normal"].includes(${definitionVarName}.sub)) { window._resurrection.addPortalCollider(${definitionVarName}, ${xName}, ${yName}) } ${
     code.slice(index)
   }`;
 });
@@ -144,9 +171,19 @@ api.patchScript("index-game.js", (code) => {
 });
 
 api.patchMethod("checkCollisions", (code) => {
+  code = code.replace(
+    "&&this['p']",
+    "&&({isFlying:this.p.isFlying||this.p.gravityFlipped})",
+  );
+
+  code = code.replace(
+    "&&(this['p']",
+    "&&!this.p.gravityFlipped&&(this['p']",
+  );
+
   return code.replace(
     /(if\s*\(\s*(_0x[\da-f]+)\s*\[\s*_0x[\da-f]+\s*\(\s*0x[\da-f]+\s*\)\s*\]\s*===\s*\w+\s*\)\s*return\s+void\s+this\s*\[\s*_0x[\da-f]+\s*\(\s*0x[\da-f]+\s*\)\s*\]\s*\(\s*\)\s*;)/,
-    "$1 if ($2.type === 'jump_pad' && !$2.activated) {$2.activated = true;window._resurrection.onPadCollision();return;}; if ($2.type === 'jump_ring' && !$2.activated) {$2.activated = window._resurrection.onRingCollision();return;}",
+    "$1 if ($2.type === 'jump_pad' && !$2.activated) {$2.activated = true;window._resurrection.onPadCollision();return;}; if ($2.type === 'jump_ring' && !$2.activated) {$2.activated = window._resurrection.onRingCollision();return;}; if ($2.type.startsWith('portal_') && $2 !== 'portal_fly' && $2 !== 'portal_cube' && !$2.activated) {$2.activated = true;window._resurrection.onPortalCollision($2);return;}",
   );
 });
 
@@ -174,6 +211,59 @@ window._resurrection.onRingCollision = () => {
   }
   return false;
 };
+
+window._resurrection.onPortalCollision = (object: GameObject) => {
+  const flipGravity = (flipped: boolean) => {
+    if (window.gdScene._state.gravityFlipped === flipped) return;
+    window.gdScene._state.gravityFlipped = flipped;
+    window.gdScene._state.yVelocity *= 0.5;
+    window.gdScene._state.canJump = false;
+    window.gdScene._state.onGround = false;
+  };
+
+  if (object.type === "portal_gravity_normal") {
+    flipGravity(true);
+    return;
+  }
+  if (object.type === "portal_gravity_flip") {
+    flipGravity(false);
+  }
+};
+
+api.patchMethod("syncSprites", (code) => {
+  const offsetVarName = code.match(/const (_0x[\da-f]+)=0xa,/)?.[1]!;
+
+  const index1 = code.lastIndexOf(offsetVarName);
+  code = code.slice(0, index1) +
+    `(this.p.gravityFlipped ? -40 : ${offsetVarName})` +
+    code.slice(index1 + offsetVarName.length);
+
+  const index2 = code.lastIndexOf(offsetVarName, index1 - 1);
+  code = code.slice(0, index2) +
+    `(this.p.gravityFlipped ? -40 : ${offsetVarName})` +
+    code.slice(index2 + offsetVarName.length);
+
+  return code;
+});
+
+api.onUpdate(() => {
+  if (window.gdScene._state.isFlying) {
+    for (const layer of window.gdScene._player._playerLayers) {
+      if (!layer) continue;
+      layer.sprite.scaleY = window.gdScene._state.gravityFlipped ? -0.55 : 0.55;
+    }
+
+    for (const layer of window.gdScene._player._shipLayers) {
+      if (!layer) continue;
+      layer.sprite.scaleY = window.gdScene._state.gravityFlipped ? -1 : 1;
+    }
+  } else {
+    for (const layer of window.gdScene._player._playerLayers) {
+      if (!layer) continue;
+      layer.sprite.scaleY = window.gdScene._state.gravityFlipped ? -1 : 1;
+    }
+  }
+}, "after");
 
 api.onStart(() => {
   const originalPushButton = window.gdScene._pushButton.bind(window.gdScene);
@@ -217,7 +307,7 @@ const sheetBaseUrl =
   "https://raw.githubusercontent.com/web-dashers/web-dashers.github.io/refs/heads/main/assets/sheets/GJ_GameSheet";
 api.patchMethod("preload", (code) => {
   return code.slice(0, -1) +
-    `; this.load.atlas("WebDashers1", "${sheetBaseUrl}.png", "${sheetBaseUrl}.json"); }`;
+    `; this.load.atlas("WebDashers1", "${sheetBaseUrl}.png", "${sheetBaseUrl}.json"); this.load.atlas("WebDashers2", "${sheetBaseUrl}02.png", "${sheetBaseUrl}02.json"); }`;
 });
 
 api.patchScript("index-game.js", (code) => {
@@ -227,7 +317,7 @@ api.patchScript("index-game.js", (code) => {
         api.getObfuscatedId("GJ_WebSheet").toString(16)
       }\\s*\\)\\s*\\]`,
     ),
-    "const $1 = ['GJ_WebSheet', 'WebDashers1']",
+    "const $1 = ['GJ_WebSheet', 'WebDashers1', 'WebDashers2']",
   );
   return code;
 });
