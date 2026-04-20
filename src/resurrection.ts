@@ -45,6 +45,13 @@ declare global {
       ) => void;
       onPadCollision: () => void;
 
+      addRingCollider: (
+        definition: ObjectDefinition,
+        x: number,
+        y: number,
+      ) => void;
+      onRingCollision: () => boolean;
+
       createImageFromAtlas: typeof window.createImageFromAtlas;
     };
   }
@@ -68,7 +75,6 @@ Object.defineProperty(window._resurrection, "objectDefinitions", {
   get: () => _objectDefinitions,
   set: (definitions: typeof window._resurrection.objectDefinitions) => {
     if (!_objectDefinitions) {
-      console.log(definitions[35]);
       definitions[35]!.gridH = 0.13333334028720856;
       definitions[35]!.gridW = 0.8333333134651184;
     }
@@ -83,6 +89,22 @@ window._resurrection.addPadCollider = (
 ) => {
   const object = new window._resurrection.GameObject(
     "jump_pad",
+    x,
+    y,
+    definition.gridW * 60,
+    definition.gridH * 60,
+  );
+  window.gdScene._level.objects.push(object);
+  window.gdScene._level._addCollisionToSection(object);
+};
+
+window._resurrection.addRingCollider = (
+  definition: ObjectDefinition,
+  x: number,
+  y: number,
+) => {
+  const object = new window._resurrection.GameObject(
+    "jump_ring",
     x,
     y,
     definition.gridW * 60,
@@ -108,7 +130,7 @@ api.patchMethod("_spawnLevelObjects", (code) => {
 
   return `${
     code.slice(0, index)
-  } else if (${definitionVarName}.type === "${ObjectType.PAD}") { window._resurrection.addPadCollider(${definitionVarName}, ${xName}, ${yName}) } ${
+  } else if (${definitionVarName}.type === "${ObjectType.PAD}") { window._resurrection.addPadCollider(${definitionVarName}, ${xName}, ${yName}) } else if (${definitionVarName}.type === "${ObjectType.RING}") { window._resurrection.addRingCollider(${definitionVarName}, ${xName}, ${yName}) } ${
     code.slice(index)
   }`;
 });
@@ -124,7 +146,7 @@ api.patchScript("index-game.js", (code) => {
 api.patchMethod("checkCollisions", (code) => {
   return code.replace(
     /(if\s*\(\s*(_0x[\da-f]+)\s*\[\s*_0x[\da-f]+\s*\(\s*0x[\da-f]+\s*\)\s*\]\s*===\s*\w+\s*\)\s*return\s+void\s+this\s*\[\s*_0x[\da-f]+\s*\(\s*0x[\da-f]+\s*\)\s*\]\s*\(\s*\)\s*;)/,
-    "$1 if ($2.type === 'jump_pad' && !$2.activated) {$2.activated = true;window._resurrection.onPadCollision();return;}",
+    "$1 if ($2.type === 'jump_pad' && !$2.activated) {$2.activated = true;window._resurrection.onPadCollision();return;}; if ($2.type === 'jump_ring' && !$2.activated) {$2.activated = window._resurrection.onRingCollision();return;}",
   );
 });
 
@@ -135,6 +157,61 @@ window._resurrection.onPadCollision = () => {
   window.gdScene._state.yVelocity = 32 * window.gdScene._player.flipMod();
   window.gdScene._player.runRotateAction();
 };
+
+let queueJump = false;
+
+window._resurrection.onRingCollision = () => {
+  if (queueJump && window.gdScene._state.upKeyDown) {
+    window.gdScene._state.isJumping = true;
+    window.gdScene._state.onGround = false;
+    window.gdScene._state.canJump = false;
+    queueJump = false;
+    window.gdScene._state.upKeyPressed = false;
+    window.gdScene._state.yVelocity = window.gdScene._player.flipMod() *
+      22.360064;
+
+    return true;
+  }
+  return false;
+};
+
+api.onStart(() => {
+  const originalPushButton = window.gdScene._pushButton.bind(window.gdScene);
+  window.gdScene._pushButton = (function (this: typeof window.gdScene) {
+    if (!this._slideIn && !this._state.isDead && !this._state.upKeyDown) {
+      queueJump = true;
+    }
+    originalPushButton();
+  }).bind(window.gdScene);
+
+  const originalReleaseButton = window.gdScene._releaseButton.bind(
+    window.gdScene,
+  );
+  window.gdScene._releaseButton = (() => {
+    queueJump = false;
+    originalReleaseButton();
+  }).bind(window.gdScene);
+
+  const originalHitGround = window.gdScene._player.hitGround.bind(
+    window.gdScene._player,
+  );
+  window.gdScene._player.hitGround = (() => {
+    queueJump = false;
+    originalHitGround();
+  }).bind(window.gdScene._player);
+
+  const originalRunRotateAction = window.gdScene._player.runRotateAction.bind(
+    window.gdScene._player,
+  );
+  window.gdScene._player.runRotateAction = (() => {
+    queueJump = false;
+    originalRunRotateAction();
+  }).bind(window.gdScene._player);
+});
+
+api.onDeath(() => {
+  queueJump = false;
+});
 
 const sheetBaseUrl =
   "https://raw.githubusercontent.com/web-dashers/web-dashers.github.io/refs/heads/main/assets/sheets/GJ_GameSheet";
