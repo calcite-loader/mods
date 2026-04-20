@@ -10,6 +10,7 @@ interface Checkpoint {
   jumping: boolean;
   rotation: number;
   canJump: boolean;
+  flipped: boolean;
   songPosition: number;
   sprite: Phaser.GameObjects.Image;
 }
@@ -39,6 +40,7 @@ api.onStart(() => {
       jumping: window.gdScene._state.isJumping,
       rotation: window.gdScene._player._rotation,
       canJump: window.gdScene._state.canJump,
+      flipped: window.gdScene._state.gravityFlipped,
       songPosition: window.gdScene._audio._music
         ? (window.gdScene._audio._music as Phaser.Sound.WebAudioSound).seek
         : 0,
@@ -74,6 +76,7 @@ api.onStart(() => {
       window.gdScene._state.yVelocity = checkpoints.at(-1)!.yVel;
       window.gdScene._state.isJumping = checkpoints.at(-1)!.jumping;
       window.gdScene._state.canJump = checkpoints.at(-1)!.canJump;
+      window.gdScene._state.gravityFlipped = checkpoints.at(-1)!.flipped;
       window.gdScene._player._rotation = checkpoints.at(-1)!.rotation;
       if (checkpoints.at(-1)!.flying) {
         window.gdScene._player.enterShipMode();
