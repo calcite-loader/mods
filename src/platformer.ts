@@ -70,8 +70,8 @@ window._platformer.handleWallCollision = (object: any) => {
       objectBottom = object.y - object.h / 2,
       objectTop = object.y + object.h / 2;
 
-    return worldX + 30 > objectLeft &&
-      worldX - 30 < objectRight &&
+    return worldX + 29.5 > objectLeft &&
+      worldX - 29.5 < objectRight &&
       playerY + 9 > objectBottom &&
       playerY - 9 < objectTop;
   };
