@@ -144,12 +144,23 @@ api.onUpdate(() => {
   const px = window.gdScene._playerWorldX;
   const py = window.gdScene._state.y;
 
-  const playerPoly = [
-    { x: px - 30, y: py - 30 },
-    { x: px + 30, y: py - 30 },
-    { x: px + 30, y: py + 30 },
-    { x: px - 30, y: py + 30 },
+  let playerPoly = [
+    { x: -30, y: -30 },
+    { x: 30, y: -30 },
+    { x: 30, y: 30 },
+    { x: -30, y: 30 },
   ];
+
+  playerPoly = playerPoly.map((point) => {
+    // Fix edge collisions
+    point.x += point.x < 0 ? 0.1 : -0.1;
+    point.y += point.y < 0 ? 0.1 : -0.1;
+
+    point.x += px;
+    point.y += py;
+
+    return point;
+  });
 
   const nearbyObjects = window.gdScene._level.getNearbySectionObjects(px);
   for (const object of nearbyObjects) {
