@@ -1,6 +1,7 @@
 /*
  * @name Physics Mod
  * @needsRefresh true
+ * @deps physicsUtils
  */
 
 const settings = api.registerSettings({
@@ -22,22 +23,14 @@ const settings = api.registerSettings({
   },
 });
 
-const defaultSpeed = 11.540004;
-const defaultJumpVelocity = 1.916398;
+const physicsUtils = api.lib<typeof import("./physicsUtils")>("physicsUtils");
 
-api.patchScript(
-  "index-game.js",
-  (code) => {
-    code = code.replace(
-      new RegExp(`(\\w+)\\s*=\\s*${defaultSpeed}`),
-      `$1 = ${defaultSpeed * settings.speedMultiplier}`,
-    );
+api.onLoad(() => {
+  physicsUtils.setPlayerSpeed(
+    physicsUtils.getPlayerSpeed() * settings.speedMultiplier,
+  );
 
-    code = code.replace(
-      new RegExp(`(\\w+)\\s*=\\s*${defaultJumpVelocity}`),
-      `$1 = ${defaultJumpVelocity * settings.jumpMultiplier}`,
-    );
-
-    return code;
-  },
-);
+  physicsUtils.setJumpVelocity(
+    physicsUtils.getJumpVelocity() * settings.jumpMultiplier,
+  );
+});

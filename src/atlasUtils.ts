@@ -38,14 +38,9 @@ api.patchScript("index-game.js", (code) => {
   );
 });
 
-let cachedAtlasFunction: typeof window._atlasUtils.createImageFromAtlas | null =
-  null;
 export const createImageFromAtlas:
   typeof window._atlasUtils.createImageFromAtlas = (scene, x, y, frame) => {
-    if (!cachedAtlasFunction) {
-      cachedAtlasFunction = window._atlasUtils.createImageFromAtlas;
-    }
-    return cachedAtlasFunction(scene, x, y, frame);
+    return window._atlasUtils.createImageFromAtlas(scene, x, y, frame);
   };
 
 interface CustomAtlas {

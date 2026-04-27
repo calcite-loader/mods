@@ -1,13 +1,12 @@
 /*
  * @name Platformer Mode
  * @needsRefresh true
+ * @deps physicsUtils
  */
 
 declare global {
   interface Window {
     _platformer: {
-      setPlayerSpeed: (newSpeed: number) => void;
-      getPlayerSpeed: () => number;
       handleWallCollision: (object: any) => boolean;
       handleHitHead: (object: any) => void;
       playerDirection: 1 | -1 | 0;
@@ -20,17 +19,7 @@ const defaultSpeed = 11.540004;
 
 window._platformer.playerDirection = 0;
 
-api.patchScript(
-  "index-game.js",
-  (code) => {
-    code = code.replace(
-      new RegExp(`,\\s*(\\w+)\\s*=\\s*${defaultSpeed},\\s*`), // Def not ripped out of the physics mod
-      `; let $1 = ${defaultSpeed}; window._platformer.setPlayerSpeed = (newSpeed) => { $1 = newSpeed }; window._platformer.getPlayerSpeed = () => $1; const `,
-    );
-
-    return code;
-  },
-);
+const physicsUtils = api.lib<typeof import("./physicsUtils")>("physicsUtils");
 
 api.patchMethod("runRotateAction", (code) => {
   return code.replace(
@@ -79,9 +68,7 @@ window._platformer.handleWallCollision = (object: any) => {
   if (!checkIsColliding()) return false;
 
   while (checkIsColliding()) {
-    window.gdScene._playerWorldX += window._platformer.getPlayerSpeed() > 0
-      ? -1
-      : 1;
+    window.gdScene._playerWorldX -= window._platformer.playerDirection;
   }
 
   return true;
@@ -101,7 +88,7 @@ window._platformer.handleHitHead = (object: any) => {
 };
 
 api.onStart(() => {
-  window._platformer.setPlayerSpeed(0);
+  physicsUtils.setPlayerSpeed(0);
 
   let playerWorldX = window.gdScene._playerWorldX;
   Object.defineProperty(window.gdScene, "_playerWorldX", {
@@ -143,7 +130,7 @@ api.onStart(() => {
       window._platformer.playerDirection = 0;
     }
 
-    window._platformer.setPlayerSpeed(
+    physicsUtils.setPlayerSpeed(
       defaultSpeed * window._platformer.playerDirection,
     );
   };

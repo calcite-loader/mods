@@ -1,7 +1,7 @@
 /*
  * @name Editor
  * @needsRefresh true
- * @deps atlasUtils
+ * @deps atlasUtils, physicsUtils
  * @conflicts platformer, levelLoader, practice
  */
 
@@ -12,6 +12,7 @@
  */
 
 const atlasUtils = api.lib<typeof import("./atlasUtils")>("atlasUtils");
+const physicsUtils = api.lib<typeof import("./physicsUtils")>("physicsUtils");
 
 const settings = api.registerSettings({
   invertRotation: {
@@ -37,7 +38,6 @@ enum ObjectType {
 declare global {
   interface Window {
     _editor: {
-      setPlayerSpeed: (newSpeed: number) => void;
       objectDefinitions: Record<number, {
         type: ObjectType;
         frame: string;
@@ -51,26 +51,13 @@ declare global {
 
 const defaultSpeed = 11.540004;
 
-// Def not ripped out of the platformer mode mod
-api.patchScript(
-  "index-game.js",
-  (code) => {
-    code = code.replace(
-      new RegExp(`,\\s*(\\w+)\\s*=\\s*${defaultSpeed},\\s*`),
-      `; let $1 = ${defaultSpeed}; window._editor.setPlayerSpeed = (newSpeed) => { $1 = newSpeed }; const `,
-    );
-
-    return code;
-  },
-);
-
 // Movement Logic
 
 let playerY = 30;
 let playerVelY = 0;
 
 api.onStart(() => {
-  window._editor.setPlayerSpeed(0);
+  physicsUtils.setPlayerSpeed(0);
 
   Object.defineProperty(window.gdScene._state, "y", {
     get: () => {
@@ -116,7 +103,7 @@ api.onStart(() => {
   const isDownDown = () => downKey.isDown || sKey.isDown;
 
   const updateMovement = () => {
-    window._editor.setPlayerSpeed(
+    physicsUtils.setPlayerSpeed(
       defaultSpeed * (+isRightDown() - +isLeftDown()),
     );
     playerVelY = defaultSpeed * (+isUpDown() - +isDownDown());
