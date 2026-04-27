@@ -1,6 +1,7 @@
 /*
  * @name Editor
  * @needsRefresh true
+ * @deps atlasUtils
  */
 
 /* Todo List:
@@ -8,6 +9,8 @@
  * Playtesting
  * Fix extra objects (portal backs and the pulsing thingies)
  */
+
+const atlasUtils = api.lib<typeof import("./atlasUtils")>("atlasUtils");
 
 const settings = api.registerSettings({
   invertRotation: {
@@ -186,7 +189,7 @@ api.onStart(() => {
 let previewImage: Phaser.GameObjects.Image;
 
 api.onStart(() => {
-  previewImage = window.createImageFromAtlas(
+  previewImage = atlasUtils.createImageFromAtlas(
     window.gdScene,
     0,
     0,
@@ -248,7 +251,7 @@ const addObject = () => {
     rotation,
   });
 
-  const sprite = window.createImageFromAtlas(
+  const sprite = atlasUtils.createImageFromAtlas(
     window.gdScene,
     worldX,
     worldY,

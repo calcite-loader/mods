@@ -3,10 +3,37 @@
 import { Glob } from "bun";
 import path from "node:path";
 
-const extractHeader = async (filePath: string): Promise<string> => {
-  const content = await Bun.file(filePath).text();
-  const headerMatch = content.match(/^(\/\*[\s\S]*?\*\/)\s*\n/);
-  return headerMatch && headerMatch[1] ? headerMatch[1] : "";
+const parseHeaderFields = (code: string): Record<string, string> => {
+  const fields: Record<string, string> = {};
+
+  const headerCommentMatch = code.match(/^\/\*[\s\S]*?\*\//);
+  if (!headerCommentMatch) return fields;
+
+  const headerComment = headerCommentMatch[0];
+  const fieldRegex = /@(\w+)\s+(.+?)(?=\n|$)/g;
+
+  let match;
+  while ((match = fieldRegex.exec(headerComment)) !== null) {
+    fields[match[1]!] = match[2]!.trim();
+  }
+
+  return fields;
+};
+
+interface Dependency {
+  id: string;
+  downloadUrl?: string;
+}
+
+const parseDeps = (text: string): Dependency[] => {
+  return text.split(",").map((dep) => dep.trim()).map((dep) =>
+    dep.includes(";")
+      ? {
+        id: dep.split(";", 1)[0]!.trim(),
+        downloadUrl: dep.split(";", 1)[1]!.trim(),
+      }
+      : { id: dep }
+  );
 };
 
 const isCI = Bun.argv.includes("--ci");
@@ -44,28 +71,40 @@ const manifest = {
       continue;
     }
 
-    const header = await extractHeader(inputPath);
+    const builtContent = await Bun.file(outputPath).text();
+    const header = parseHeaderFields(await Bun.file(inputPath).text());
 
-    if (header) {
-      const builtContent = await Bun.file(outputPath).text();
-      await Bun.write(outputPath, header + "\n\n" + builtContent);
-
-      const nameMatch = header.match(/@name\s+(.*)/);
-      if (isCI) {
-        manifest.mods.push({
-          id,
-          name: nameMatch ? nameMatch[1]!.trim() : id,
-          downloadUrl:
-            `https://${process.env.GITHUB_REPOSITORY_OWNER}.github.io/${process.env.GITHUB_REPOSITORY_NAME}/${id}.js`,
-        });
-      }
-
-      console.log(
-        "Built: " + (nameMatch ? nameMatch[1]?.trim() : id),
-      );
-    } else {
-      console.log("Built: " + id);
+    if (header.deps && isCI) {
+      header.deps = parseDeps(header.deps).map((dep) => {
+        if (dep.downloadUrl != null) return `${dep.id};${dep.downloadUrl}`;
+        return `${dep.id};https://${process.env.GITHUB_REPOSITORY_OWNER}.github.io/${process.env.GITHUB_REPOSITORY_NAME}/${dep.id}.js`;
+      }).join(",");
     }
+
+    if (!header.id) {
+      header.id = id;
+    }
+
+    await Bun.write(
+      outputPath,
+      `/**\n${
+        Object.entries(header).map(([key, value]) => ` * @${key} ${value}`)
+          .join("\n")
+      }\n */\n\n${builtContent}`,
+    );
+
+    if (isCI) {
+      manifest.mods.push({
+        id,
+        name: header.name ?? id,
+        downloadUrl:
+          `https://${process.env.GITHUB_REPOSITORY_OWNER}.github.io/${process.env.GITHUB_REPOSITORY_NAME}/${id}.js`,
+      });
+    }
+
+    console.log(
+      "Built: " + (header.name ?? id),
+    );
   }
 
   if (isCI) {

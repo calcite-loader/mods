@@ -1,8 +1,11 @@
 /**
  * @name Mooned
+ * @deps atlasUtils
  */
 
 import Peer, { DataConnection } from "peerjs";
+
+const atlasUtils = api.lib<typeof import("./atlasUtils")>("atlasUtils");
 
 type Packet = [
   number, /** x */
@@ -32,7 +35,7 @@ const setupConnection = (connection: DataConnection) => {
   const id = connection.peer;
 
   connections[id] = connection;
-  players[id] = window.createImageFromAtlas(
+  players[id] = atlasUtils.createImageFromAtlas(
     window.gdScene,
     0,
     0,

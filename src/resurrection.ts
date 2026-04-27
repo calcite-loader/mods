@@ -1,9 +1,12 @@
 /**
  * @name Resurrection
  * @needsRefresh true
+ * @deps atlasUtils
  */
 
 import type { GameObject } from "@calcite-loader/types";
+
+const atlasUtils = api.lib<typeof import("./atlasUtils")>("atlasUtils");
 
 enum ObjectType {
   SOLID = "solid",
@@ -61,8 +64,6 @@ declare global {
         y: number,
       ) => void;
       onPortalCollision: (object: GameObject) => void;
-
-      createImageFromAtlas: typeof window.createImageFromAtlas;
     };
   }
 }
@@ -305,19 +306,13 @@ api.onDeath(() => {
 
 const sheetBaseUrl =
   "https://raw.githubusercontent.com/web-dashers/web-dashers.github.io/refs/heads/main/assets/sheets/GJ_GameSheet";
-api.patchMethod("preload", (code) => {
-  return code.slice(0, -1) +
-    `; this.load.atlas("WebDashers1", "${sheetBaseUrl}.png", "${sheetBaseUrl}.json"); this.load.atlas("WebDashers2", "${sheetBaseUrl}02.png", "${sheetBaseUrl}02.json"); }`;
-});
-
-api.patchScript("index-game.js", (code) => {
-  code = code.replace(
-    new RegExp(
-      `const\\s+(\\w+)\\s*=\\s*\\[\\s*_0x[a-f\\d]+\\s*\\(\\s*0x${
-        api.getObfuscatedId("GJ_WebSheet").toString(16)
-      }\\s*\\)\\s*\\]`,
-    ),
-    "const $1 = ['GJ_WebSheet', 'WebDashers1', 'WebDashers2']",
-  );
-  return code;
-});
+atlasUtils.addCustomObjectAtlas(
+  "WebDashers1",
+  sheetBaseUrl + ".png",
+  sheetBaseUrl + ".json",
+);
+atlasUtils.addCustomObjectAtlas(
+  "WebDashers2",
+  sheetBaseUrl + "02.png",
+  sheetBaseUrl + "02.json",
+);

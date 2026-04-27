@@ -26,5 +26,6 @@
     "noPropertyAccessFromIndexSignature": false,
 
     "types": ["@types/bun", "@calcite-loader/types"]
-  }
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts"]
 }
