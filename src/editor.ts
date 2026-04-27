@@ -2,6 +2,7 @@
  * @name Editor
  * @needsRefresh true
  * @deps atlasUtils
+ * @conflicts platformer, levelLoader, practice
  */
 
 /* Todo List:

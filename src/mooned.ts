@@ -1,6 +1,7 @@
 /**
  * @name Mooned
  * @deps atlasUtils
+ * @conflicts editor
  */
 
 import Peer, { DataConnection } from "peerjs";
