@@ -95,7 +95,7 @@ const manifest = {
 
     if (isCI) {
       manifest.mods.push({
-        id,
+        id: header.id,
         name: header.name ?? id,
         downloadUrl:
           `https://${process.env.GITHUB_REPOSITORY_OWNER}.github.io/${process.env.GITHUB_REPOSITORY_NAME}/${id}.js`,
