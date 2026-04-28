@@ -7,7 +7,7 @@
         "peerjs": "^1.5.5",
       },
       "devDependencies": {
-        "@calcite-loader/types": "^0.12.1",
+        "@calcite-loader/types": "0.14.1",
         "@types/bun": "^1.3.11",
       },
       "peerDependencies": {
@@ -16,7 +16,7 @@
     },
   },
   "packages": {
-    "@calcite-loader/types": ["@calcite-loader/types@0.12.1", "", { "dependencies": { "@types/pako": "^2.0.4" }, "peerDependencies": { "phaser": "~3.90.0" } }, "sha512-k8FdJvGVOLEqB3UGpWJaA1ceNnBlLsSmtbZsrFZ36Hqz4/EPPIUPtzsRtnMzxEVrz1wwzkE5u9pGYGeGGiNQeA=="],
+    "@calcite-loader/types": ["@calcite-loader/types@0.14.1", "", { "dependencies": { "@types/pako": "^2.0.4" }, "peerDependencies": { "phaser": "~3.90.0" } }, "sha512-sVzz4VH6NNBVNWMNLQ8wkqtlgBUlppJJ1UFXBqb7RZTYCcV3ppiCwIdZ6sLjjSyVJkMS8dQ1l9wyIuNFCrQuIg=="],
 
     "@msgpack/msgpack": ["@msgpack/msgpack@2.8.0", "", {}, "sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ=="],
 

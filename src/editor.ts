@@ -1,9 +1,11 @@
 /*
  * @name Editor
  * @needsRefresh true
- * @deps atlasUtils, physicsUtils
+ * @deps atlasUtils, physicsUtils, worldUtils
  * @conflicts platformer, levelLoader, practice
  */
+
+import { ObjectType } from "@calcite-loader/types";
 
 /* Todo List:
  * Loading Exported Levels
@@ -13,6 +15,9 @@
 
 const atlasUtils = api.lib<typeof import("./atlasUtils")>("atlasUtils");
 const physicsUtils = api.lib<typeof import("./physicsUtils")>("physicsUtils");
+const worldUtils = api.lib<typeof import("./worldUtils")>("worldUtils");
+
+worldUtils.disableLevel();
 
 const settings = api.registerSettings({
   invertRotation: {
@@ -21,33 +26,6 @@ const settings = api.registerSettings({
     default: false,
   },
 });
-
-enum ObjectType {
-  SOLID = "solid",
-  HAZARD = "hazard",
-  DECORATIVE = "deco",
-  PORTAL = "portal",
-  PAD = "pad",
-  RING = "ring",
-  TRIGGER = "trigger",
-  SPEED = "speed",
-  FLY = "fly",
-  CUBE = "cube",
-}
-
-declare global {
-  interface Window {
-    _editor: {
-      objectDefinitions: Record<number, {
-        type: ObjectType;
-        frame: string;
-        gridW: number;
-        gridH: number;
-      }>;
-    };
-  }
-}
-(window._editor as any) = {};
 
 const defaultSpeed = 11.540004;
 
@@ -119,21 +97,9 @@ api.onUpdate(() => {
   playerY += playerVelY;
 });
 
-// Make object definitions globally available via window._editor.objectDefinitions
-api.patchScript("index-game.js", (code) => {
-  const match = code.match(
-    /,\s*(\w+)\s*=\s*{\s*0x1:\s*{\s*'type'\s*:\s*\w+\s*,\s*'frame'/,
-  );
-  if (!match || !match[1]) return code;
-  const index = code.indexOf(";", match.index) + 1;
-  return code.slice(0, index) +
-    `window._editor.objectDefinitions = ${match[1]};` +
-    code.slice(index);
-});
-
 const objectCycles: Record<
   number,
-  (keyof typeof window._editor.objectDefinitions)[]
+  (keyof typeof worldUtils.objectDefinitions)[]
 > = {
   1: [1, 2, 3, 4, 5, 6, 7, 40, 83, 195, 196],
   2: [8, 9, 39, 61, 103, 392],
@@ -147,10 +113,6 @@ let currentCycle: keyof typeof objectCycles = 1;
 let eraser = false;
 
 let rotation = 0;
-
-api.patchMethod("loadLevel", (code) => {
-  return code.replace("{", "{return;");
-});
 
 const groundBoundsY = 460;
 
@@ -181,7 +143,7 @@ api.onStart(() => {
     window.gdScene,
     0,
     0,
-    window._editor.objectDefinitions[objectCycles[currentCycle]?.[cycleIndex]!]
+    worldUtils.objectDefinitions[objectCycles[currentCycle]?.[cycleIndex]!]
       ?.frame!,
   );
   previewImage.alpha = 0.25;
@@ -198,7 +160,7 @@ api.onStart(() => {
 
 const updatePreview = () => {
   previewImage.setFrame(
-    window._editor.objectDefinitions[objectCycles[currentCycle]?.[cycleIndex]!]
+    worldUtils.objectDefinitions[objectCycles[currentCycle]?.[cycleIndex]!]
       ?.frame!,
   );
 };
@@ -215,8 +177,8 @@ interface PlacedObject {
 const placedObjects: PlacedObject[] = [];
 
 const addObject = () => {
-  const definition = window
-    ._editor.objectDefinitions[objectCycles[currentCycle]?.[cycleIndex]!]!;
+  const definition = worldUtils
+    .objectDefinitions[objectCycles[currentCycle]?.[cycleIndex]!]!;
   const isPortal = (definition.type === ObjectType.PORTAL ||
     definition.type === ObjectType.SPEED) &&
     definition.frame.includes("_front_");

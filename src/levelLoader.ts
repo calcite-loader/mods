@@ -1,6 +1,7 @@
 /*
  * @name Level Loader
  * @needsRefresh true
+ * @deps worldUtils
  */
 
 const settings = api.registerSettings({
@@ -11,8 +12,5 @@ const settings = api.registerSettings({
   },
 });
 
-api.patchMethod("loadLevel", (code) => {
-  const argName = code.match(/\((_0x[\da-f]+)\)/)?.[1];
-
-  return code.replace("{", `{var ${argName} = "${settings.levelstring}";`);
-});
+const worldUtils = api.lib<typeof import("./worldUtils")>("worldUtils");
+worldUtils.loadLevel(settings.levelstring);

@@ -1,28 +1,12 @@
 /*
  * @name Accurate Hitboxes
  * @needsRefresh true
+ * @deps worldUtils
  */
 
-enum ObjectType {
-  SOLID = "solid",
-  HAZARD = "hazard",
-  DECORATIVE = "deco",
-  PORTAL = "portal",
-  PAD = "pad",
-  RING = "ring",
-  TRIGGER = "trigger",
-  SPEED = "speed",
-  FLY = "fly",
-  CUBE = "cube",
-}
+import type { ObjectDefinition, ObjectType } from "@calcite-loader/types";
 
-interface ObjectDefinition {
-  type: ObjectType;
-  frame: string;
-  gridW: number;
-  gridH: number;
-  sub?: string;
-}
+const worldUtils = api.lib<typeof import("./worldUtils")>("worldUtils");
 
 declare global {
   interface Window {
@@ -39,27 +23,12 @@ declare global {
         x: number,
         y: number,
       ) => void;
-
-      GameObject: {
-        new (type: string, x: number, y: number, w: number, h: number): {
-          type: string; // TODO: Enum type?
-          x: number;
-          y: number;
-          w: number;
-          h: number;
-          activated: boolean;
-        };
-      };
     };
   }
 }
 (window._accurateHitboxes as any) = {};
 
-let gameObjectClassName: string;
-
 api.patchMethod("_spawnLevelObjects", (code) => {
-  gameObjectClassName = code.match(/new\s+(?!Set\s*\()(\w+)/)?.[1]!;
-
   const xName = code.match(/let\s+(_0x[\da-f]+)\s*=\s*(?:0x)?2\s*\*/)?.[1]!;
   const yName = code.match(/,\s*(_0x[\da-f]+)\s*=\s*(?:0x)?2\s*\*/)?.[1]!;
 
@@ -73,16 +42,8 @@ api.patchMethod("_spawnLevelObjects", (code) => {
   );
 });
 
-api.patchScript("index-game.js", (code) => {
-  const baseIndex = code.indexOf(`class ${gameObjectClassName}`);
-  const endIndex = code.indexOf("}}", baseIndex) + 2;
-  return code.slice(0, endIndex) +
-    `;window._accurateHitboxes.GameObject = ${gameObjectClassName};` +
-    code.slice(endIndex);
-});
-
 window._accurateHitboxes.createHazardHitbox = (definition, object, x, y) => {
-  const hitbox = new window._accurateHitboxes.GameObject(
+  const hitbox = new worldUtils.GameObject(
     "hazard_" + definition.frame,
     x,
     y,
