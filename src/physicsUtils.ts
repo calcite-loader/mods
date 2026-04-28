@@ -23,13 +23,13 @@ api.patchScript(
   "index-game.js",
   (code) => {
     code = code.replace(
-      new RegExp(`(\\w+)\\s*=\\s*${defaultSpeed}`),
+      new RegExp(`,\\s*(\\w+)\\s*=\\s*${defaultSpeed}\\s*,`),
       `; let $1 = ${defaultSpeed}; window._physicsUtils.setPlayerSpeed = (newSpeed) => { $1 = newSpeed }; window._physicsUtils.getPlayerSpeed = () => $1; const `,
     );
 
     code = code.replace(
-      new RegExp(`(\\w+)\\s*=\\s*${defaultJumpVelocity}`),
-      `; let $1 = ${defaultJumpVelocity}; window._physicsUtils.setJumpVelocity = (newSpeed) => { $1 = newSpeed }; window._physicsUtils.getJumpVelocity = () => $1; const `,
+      new RegExp(`,\\s*(\\w+)\\s*=\\s*${defaultJumpVelocity}\\s*,`),
+      `; let $1 = ${defaultJumpVelocity}; window._physicsUtils.setJumpVelocity = (newVelocity) => { $1 = newVelocity }; window._physicsUtils.getJumpVelocity = () => $1; const `,
     );
 
     return code;
