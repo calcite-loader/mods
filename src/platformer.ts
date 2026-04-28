@@ -88,6 +88,7 @@ window._platformer.handleHitHead = (object: any) => {
 };
 
 api.onStart(() => {
+  window.gdScene._playerWorldX = 0;
   physicsUtils.setPlayerSpeed(0);
 
   let playerWorldX = window.gdScene._playerWorldX;
@@ -133,6 +134,10 @@ api.onStart(() => {
     physicsUtils.setPlayerSpeed(
       defaultSpeed * window._platformer.playerDirection,
     );
+
+    if (window._platformer.playerDirection != 0) {
+      window.gdScene._player.runRotateAction();
+    }
   };
 
   [leftKey, rightKey, aKey, dKey].forEach((key) => {
@@ -146,6 +151,8 @@ api.onStart(() => {
   if (api.loadedMods.includes("gamepad")) {
     api.sendMessage("gamepad", (gamepad: Gamepad) => {
       api.onUpdate(() => {
+        let oldDireciton = window._platformer.playerDirection;
+
         if (gamepad.buttons[14]?.pressed && gamepad.buttons[15]?.pressed) {
           window._platformer.playerDirection = 0;
         } else if (gamepad.buttons[14]?.pressed) {
@@ -159,6 +166,11 @@ api.onStart(() => {
         physicsUtils.setPlayerSpeed(
           defaultSpeed * window._platformer.playerDirection,
         );
+
+        if (
+          window._platformer.playerDirection != oldDireciton &&
+          window._platformer.playerDirection != 0
+        ) window.gdScene._player.runRotateAction();
       }, "before");
     });
   }
