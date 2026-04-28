@@ -23,7 +23,49 @@ api.onLoad(() => {
   window.gdScene.textures.addBase64("checkpoint", checkpointImage);
 });
 
+const addCheckpoint = () => {
+  checkpoints.push({
+    x: window.gdScene._playerWorldX,
+    y: window.gdScene._state.y,
+    flying: window.gdScene._state.isFlying,
+    yVel: window.gdScene._state.yVelocity,
+    jumping: window.gdScene._state.isJumping,
+    rotation: window.gdScene._player._rotation,
+    canJump: window.gdScene._state.canJump,
+    flipped: window.gdScene._state.gravityFlipped,
+    songPosition: window.gdScene._audio._music
+      ? (window.gdScene._audio._music as Phaser.Sound.WebAudioSound).seek
+      : 0,
+    sprite: window.gdScene.add.image(0, 0, "checkpoint").setScale(0.5)
+      .setDepth(20),
+  });
+};
+
+const removeCheckpoint = () => {
+  if (checkpoints.length == 0) return;
+  checkpoints.at(-1)!.sprite.destroy();
+  checkpoints.pop();
+};
+
 api.onStart(() => {
+  if (api.loadedMods.includes("gamepad")) {
+    api.sendMessage("gamepad", (gamepad: Gamepad) => {
+      let leftBumperWasDown = false;
+      let rightBumperWasDown = false;
+      api.onUpdate(() => {
+        if (gamepad.buttons[4]?.pressed && !leftBumperWasDown) {
+          addCheckpoint();
+        }
+        leftBumperWasDown = gamepad.buttons[4]!.pressed;
+
+        if (gamepad.buttons[5]?.pressed && !rightBumperWasDown) {
+          removeCheckpoint();
+        }
+        rightBumperWasDown = gamepad.buttons[5]!.pressed;
+      });
+    });
+  }
+
   const zKey = window.gdScene.input.keyboard!.addKey(
     Phaser.Input.Keyboard.KeyCodes.Z,
   );
@@ -31,28 +73,8 @@ api.onStart(() => {
     Phaser.Input.Keyboard.KeyCodes.X,
   );
 
-  zKey.on("down", () => {
-    checkpoints.push({
-      x: window.gdScene._playerWorldX,
-      y: window.gdScene._state.y,
-      flying: window.gdScene._state.isFlying,
-      yVel: window.gdScene._state.yVelocity,
-      jumping: window.gdScene._state.isJumping,
-      rotation: window.gdScene._player._rotation,
-      canJump: window.gdScene._state.canJump,
-      flipped: window.gdScene._state.gravityFlipped,
-      songPosition: window.gdScene._audio._music
-        ? (window.gdScene._audio._music as Phaser.Sound.WebAudioSound).seek
-        : 0,
-      sprite: window.gdScene.add.image(0, 0, "checkpoint").setScale(0.5)
-        .setDepth(20),
-    });
-  });
-  xKey.on("down", () => {
-    if (checkpoints.length == 0) return;
-    checkpoints.at(-1)!.sprite.destroy();
-    checkpoints.pop();
-  });
+  zKey.on("down", addCheckpoint);
+  xKey.on("down", removeCheckpoint);
 
   const originalRestartLevel = window.gdScene._restartLevel.bind(
     window.gdScene,
