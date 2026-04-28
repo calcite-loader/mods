@@ -142,4 +142,24 @@ api.onStart(() => {
 
   wKey.on("down", () => window.gdScene._pushButton());
   wKey.on("up", () => window.gdScene._releaseButton());
+
+  if (api.loadedMods.includes("gamepad")) {
+    api.sendMessage("gamepad", (gamepad: Gamepad) => {
+      api.onUpdate(() => {
+        if (gamepad.buttons[14]?.pressed && gamepad.buttons[15]?.pressed) {
+          window._platformer.playerDirection = 0;
+        } else if (gamepad.buttons[14]?.pressed) {
+          window._platformer.playerDirection = -1;
+        } else if (gamepad.buttons[15]?.pressed) {
+          window._platformer.playerDirection = 1;
+        } else {
+          window._platformer.playerDirection = 0;
+        }
+
+        physicsUtils.setPlayerSpeed(
+          defaultSpeed * window._platformer.playerDirection,
+        );
+      }, "before");
+    });
+  }
 });
