@@ -19,14 +19,6 @@ const worldUtils = api.lib<typeof import("./worldUtils")>("worldUtils");
 
 worldUtils.disableLevel();
 
-const settings = api.registerSettings({
-  invertRotation: {
-    name: "Invert Rotation",
-    type: "toggle",
-    default: false,
-  },
-});
-
 const defaultSpeed = 11.540004;
 
 // Movement Logic
@@ -125,15 +117,6 @@ const snapToGrid = (pos: number, isY: boolean = false) => {
         gridSize + (isY ? groundBoundsY : 0) + gridSize / 2
     : pos;
 };
-
-// Toggle Grid
-api.onStart(() => {
-  const gKey = window.gdScene.input.keyboard!.addKey(
-    Phaser.Input.Keyboard.KeyCodes.G,
-  );
-
-  gKey.on("down", () => grid = !grid);
-});
 
 // Preview
 let previewImage: Phaser.GameObjects.Image;
@@ -282,26 +265,6 @@ api.onStart(() => {
   });
 });
 
-// Rotation
-api.onStart(() => {
-  const qKey = window.gdScene.input.keyboard!.addKey(
-    Phaser.Input.Keyboard.KeyCodes.Q,
-  );
-  const eKey = window.gdScene.input.keyboard!.addKey(
-    Phaser.Input.Keyboard.KeyCodes.E,
-  );
-
-  qKey.on("down", () => {
-    rotation += 90 * (settings.invertRotation ? -1 : 1);
-    previewImage.angle = rotation;
-  });
-
-  eKey.on("down", () => {
-    rotation -= 90 * (settings.invertRotation ? -1 : 1);
-    previewImage.angle = rotation;
-  });
-});
-
 // Fix Start thing
 api.onStart(() => {
   window.gdScene._playerWorldX = 0;
@@ -351,4 +314,28 @@ api.onStart(() => {
   });
 
   document.body.appendChild(exportBtn);
+});
+
+api.registerHotkeys({
+  rotateClockwise: {
+    name: "Rotate Clockwise",
+    default: "q",
+    onPressed: () => {
+      rotation += 90;
+      previewImage.angle = rotation;
+    },
+  },
+  rotateCounterClockwise: {
+    name: "Rotate Counterclockwise",
+    default: "e",
+    onPressed: () => {
+      rotation -= 90;
+      previewImage.angle = rotation;
+    },
+  },
+  grid: {
+    name: "Toggle Grid",
+    default: "g",
+    onPressed: () => grid = !grid,
+  },
 });
