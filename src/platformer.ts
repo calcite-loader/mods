@@ -153,11 +153,14 @@ api.onStart(() => {
       api.onUpdate(() => {
         let oldDireciton = window._platformer.playerDirection;
 
-        if (gamepad.buttons[14]?.pressed && gamepad.buttons[15]?.pressed) {
+        if (
+          (gamepad.buttons[14]?.pressed || isLeftDown()) &&
+          (gamepad.buttons[15]?.pressed || isRightDown())
+        ) {
           window._platformer.playerDirection = 0;
-        } else if (gamepad.buttons[14]?.pressed) {
+        } else if (gamepad.buttons[14]?.pressed || isLeftDown()) {
           window._platformer.playerDirection = -1;
-        } else if (gamepad.buttons[15]?.pressed) {
+        } else if (gamepad.buttons[15]?.pressed || isRightDown()) {
           window._platformer.playerDirection = 1;
         } else {
           window._platformer.playerDirection = 0;
