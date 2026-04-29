@@ -49,9 +49,11 @@ api.patchMethod("checkCollisions", (code) => {
   return code;
 });
 
+let playerWorldX: number;
+
 window._platformer.handleWallCollision = (object: any) => {
   const checkIsColliding = () => {
-    const worldX = window.gdScene._playerWorldX;
+    const worldX = playerWorldX;
     const playerY = window.gdScene._state.y;
 
     const objectLeft = object.x - object.w / 2,
@@ -68,7 +70,7 @@ window._platformer.handleWallCollision = (object: any) => {
   if (!checkIsColliding()) return false;
 
   while (checkIsColliding()) {
-    window.gdScene._playerWorldX -= window._platformer.playerDirection;
+    playerWorldX -= window._platformer.playerDirection;
   }
 
   return true;
@@ -91,7 +93,7 @@ api.onStart(() => {
   window.gdScene._playerWorldX = 0;
   physicsUtils.setPlayerSpeed(0);
 
-  let playerWorldX = window.gdScene._playerWorldX;
+  playerWorldX = window.gdScene._playerWorldX;
   Object.defineProperty(window.gdScene, "_playerWorldX", {
     get: () => playerWorldX,
     set: (newX) => {
