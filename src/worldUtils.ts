@@ -54,14 +54,15 @@ export const loadLevel = (levelstring: string) => {
 };
 
 export let levelDisabled = false;
+
 export const disableLevel = () => {
   levelDisabled = true;
-  api.patchMethod("loadlevel", (code) => code.replace("{", "{return;"));
+  api.patchMethod("loadLevel", (code) => code.replace("{", "{return;"));
 };
 
 export const enableLevel = () => {
   if (!levelDisabled) return;
-  api.patchMethod("loadlevel", (code) => code.replace("{return;", "{"));
+  api.patchMethod("loadLevel", (code) => code.replace("{return;", "{"));
 };
 
 // Object Definitions
