@@ -4,7 +4,8 @@
  * @deps atlasUtils, worldUtils
  */
 
-import { ObjectType } from "@calcite-loader/types";
+import { type GameObject, ObjectType } from "@calcite-loader/types";
+import type { HandleCollisionCallback } from "./worldUtils";
 
 const atlasUtils = api.lib<typeof import("./atlasUtils")>("atlasUtils");
 const worldUtils = api.lib<typeof import("./worldUtils")>("worldUtils");
@@ -13,6 +14,27 @@ worldUtils.modifyObjectDefinitions((definitions) => {
   // Fix Yellow Pad Stuff
   definitions[35]!.gridW = 0.8333333134651184;
   definitions[35]!.gridH = 0.13333334028720856;
+
+  // Fix Blue Orb
+  definitions[84]!.frame = "gravring_01_001.png";
+
+  // Add Green Orb
+  definitions[1022] = {
+    ...definitions[84]!,
+    frame: "gravJumpRing_01_001.png",
+  };
+
+  // Add Red Orb
+  definitions[1333] = {
+    ...definitions[36]!,
+    frame: "ring_02_001.png",
+  };
+
+  // Add Black Orb
+  definitions[1330] = {
+    ...definitions[36]!,
+    frame: "dropRing_01_001.png",
+  };
 
   return definitions;
 });
@@ -58,17 +80,26 @@ api.onDeath(() => {
   queueJump = false;
 });
 
+const flipGravity = (flipped: boolean, yMul: number = -0.5) => {
+  if (window.gdScene._state.gravityFlipped === flipped) return;
+  window.gdScene._state.gravityFlipped = flipped;
+  window.gdScene._state.yVelocity *= yMul;
+  window.gdScene._state.canJump = false;
+  window.gdScene._state.onGround = false;
+};
+
 worldUtils.registerNewColliderType(
   ObjectType.PAD,
   "jump_pad",
-  (definition, x, y) => {
+  (definition, levelObject, x, y) => {
     const object = new worldUtils.GameObject(
       "jump_pad",
       x,
       y,
       definition.gridW * 60,
       definition.gridH * 60,
-    );
+    ) as GameObject & { _objId: number };
+    object._objId = levelObject.id;
     window.gdScene._level.objects.push(object);
     window.gdScene._level._addCollisionToSection(object);
   },
@@ -89,38 +120,63 @@ worldUtils.registerNewColliderType(
 worldUtils.registerNewColliderType(
   ObjectType.RING,
   "jump_ring",
-  (definition, x, y) => {
+  (definition, levelObject, x, y) => {
     const object = new worldUtils.GameObject(
       "jump_ring",
       x,
       y,
-      definition.gridW * 60,
-      definition.gridH * 60,
-    );
+      definition.gridW * 60 * 1.5,
+      definition.gridH * 60 * 1.5,
+    ) as GameObject & { _objId: number };
+    object._objId = levelObject.id;
     window.gdScene._level.objects.push(object);
     window.gdScene._level._addCollisionToSection(object);
   },
-  (object) => {
+  ((object: GameObject & { _objId: number }) => {
     if (!object.activated && queueJump && window.gdScene._state.upKeyDown) {
+      const jumpForce = 22.360064;
+
+      let yVel = 0;
+      let flipAfter = false;
+      let flipBefore = false;
+
+      if (object._objId === 36) { // Yellow
+        yVel = jumpForce;
+      } else if (object._objId === 84) { // Blue
+        yVel = jumpForce;
+        flipAfter = true;
+      } else if (object._objId === 1022) { // Green
+        yVel = jumpForce;
+        flipBefore = true;
+      } else if (object._objId === 1333) { // Red
+        yVel = jumpForce * 1.38;
+      } else if (object._objId === 1330) { // Black
+        yVel = -18;
+      } else if (object._objId === 141) { // Pink
+        yVel = jumpForce * 0.72;
+      }
+
       object.activated = true;
       window.gdScene._state.isJumping = true;
       window.gdScene._state.onGround = false;
       window.gdScene._state.canJump = false;
       queueJump = false;
       window.gdScene._state.upKeyPressed = false;
-      window.gdScene._state.yVelocity = window.gdScene._player.flipMod() *
-        22.360064;
+      if (flipBefore) flipGravity(!window.gdScene._state.gravityFlipped, 0.5);
+      window.gdScene._state.yVelocity = window.gdScene._player.flipMod() * yVel;
+      window.gdScene._player.runRotateAction();
+      if (flipAfter) flipGravity(!window.gdScene._state.gravityFlipped, 0.5);
 
       return true;
     }
     return false;
-  },
+  }) as HandleCollisionCallback,
 );
 
 worldUtils.registerNewColliderType(
   ObjectType.PORTAL,
   (type) => type.startsWith("portal_"),
-  (definition, x, y) => {
+  (definition, _, x, y) => {
     const object = new worldUtils.GameObject(
       "portal_" + definition.sub,
       x,
@@ -134,14 +190,6 @@ worldUtils.registerNewColliderType(
   (object) => {
     if (object.activated) return false;
     object.activated = true;
-
-    const flipGravity = (flipped: boolean) => {
-      if (window.gdScene._state.gravityFlipped === flipped) return;
-      window.gdScene._state.gravityFlipped = flipped;
-      window.gdScene._state.yVelocity *= -0.5;
-      window.gdScene._state.canJump = false;
-      window.gdScene._state.onGround = false;
-    };
 
     if (object.type === "portal_gravity_normal") {
       flipGravity(true);

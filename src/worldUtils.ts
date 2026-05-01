@@ -28,6 +28,7 @@ declare global {
       runAddColliderCallback: (
         index: number,
         definition: ObjectDefinition,
+        levelObject: any, // TODO: type
         x: number,
         y: number,
       ) => void;
@@ -107,6 +108,7 @@ Object.defineProperty(window._worldUtils, "objectDefinitions", {
 
 export type AddColliderCallback = (
   definition: ObjectDefinition,
+  levelObject: any,
   x: number,
   y: number,
 ) => void;
@@ -136,8 +138,14 @@ export const registerNewColliderType = (
   });
 };
 
-window._worldUtils.runAddColliderCallback = (index, definition, x, y) => {
-  newColliderTypes[index]?.addCollider(definition, x, y);
+window._worldUtils.runAddColliderCallback = (
+  index,
+  definition,
+  levelObject,
+  x,
+  y,
+) => {
+  newColliderTypes[index]?.addCollider(definition, levelObject, x, y);
 };
 window._worldUtils.runConditionCallback = (index, type) => {
   const condition = newColliderTypes[index]!.condition;
@@ -162,10 +170,11 @@ api.patchMethod("_spawnLevelObjects", (code) => {
 
   const xName = code.match(/let\s+(_0x[\da-f]+)\s*=\s*(?:0x)?2\s*\*/)?.[1]!;
   const yName = code.match(/,\s*(_0x[\da-f]+)\s*=\s*(?:0x)?2\s*\*/)?.[1]!;
+  const levelObjName = code.match(/for\s*\(let\s+(_0x[\da-f]+)/)?.[1]!;
 
   code = `${code.slice(0, index)} ${
     newColliderTypes.map((colliderData, index) =>
-      `else if (${definitionVarName}.type === "${colliderData.objectType}") { window._worldUtils.runAddColliderCallback(${index}, ${definitionVarName}, ${xName}, ${yName}) }`
+      `else if (${definitionVarName}.type === "${colliderData.objectType}") { window._worldUtils.runAddColliderCallback(${index}, ${definitionVarName}, ${levelObjName}, ${xName}, ${yName}) }`
     ).join("")
   } ${code.slice(index)}`;
 
