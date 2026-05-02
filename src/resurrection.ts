@@ -11,9 +11,20 @@ const atlasUtils = api.lib<typeof import("./atlasUtils")>("atlasUtils");
 const worldUtils = api.lib<typeof import("./worldUtils")>("worldUtils");
 
 worldUtils.modifyObjectDefinitions((definitions) => {
-  // Fix Yellow Pad Stuff
-  definitions[35]!.gridW = 0.8333333134651184;
-  definitions[35]!.gridH = 0.13333334028720856;
+  // Fix Pad Sizes
+  for (const id of [35, 67, 140]) {
+    definitions[id]!.gridW = 0.8333333134651184;
+    definitions[id]!.gridH = 0.13333334028720856;
+  }
+
+  // Add Red Pad
+  definitions[1332] = {
+    ...definitions[35]!,
+    frame: "bump_02_001.png",
+  };
+
+  // Fix Blue Pad
+  definitions[67]!.frame = "gravbump_01_001.png";
 
   // Fix Blue Orb
   definitions[84]!.frame = "gravring_01_001.png";
@@ -103,18 +114,33 @@ worldUtils.registerNewColliderType(
     window.gdScene._level.objects.push(object);
     window.gdScene._level._addCollisionToSection(object);
   },
-  (object) => {
+  ((object: GameObject & { _objId: number }) => {
     if (object.activated) return false;
     object.activated = true;
+
+    let yVel = 0;
+    let flip = false;
+    if (object._objId === 35) { // Yellow
+      yVel = 33;
+    } else if (object._objId === 1332) { // Red
+      yVel = 41;
+    } else if (object._objId === 140) { // Pink
+      yVel = 20.8;
+    } else if (object._objId === 67) { // Blue
+      yVel = 30;
+      flip = true;
+    }
 
     window.gdScene._state.isJumping = true;
     window.gdScene._state.canJump = false;
     window.gdScene._state.onGround = false;
-    window.gdScene._state.yVelocity = 32 * window.gdScene._player.flipMod();
+    window.gdScene._state.yVelocity = yVel * window.gdScene._player.flipMod();
     window.gdScene._player.runRotateAction();
 
+    if (flip) flipGravity(!window.gdScene._state.gravityFlipped, 0.5);
+
     return true;
-  },
+  }) as HandleCollisionCallback,
 );
 
 worldUtils.registerNewColliderType(
