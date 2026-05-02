@@ -163,11 +163,6 @@ window._worldUtils.runHandleCollisionCallback = (index, object) => {
 let gameObjectClassName: string;
 
 api.patchMethod("_spawnLevelObjects", (code) => {
-  code = code.replace(
-    "{",
-    "{console.log(window._worldUtils.objectDefinitions);",
-  );
-
   const gameObjectRegex = /new\s+(?!Set\s*\()(\w+)/;
   gameObjectClassName = code.match(gameObjectRegex)?.[1]!;
 
