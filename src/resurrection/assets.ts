@@ -18,3 +18,8 @@ atlasUtils.addCustomObjectAtlas(
   sheetBaseUrl + "player_dart_00.png",
   sheetBaseUrl + "player_dart_00.json",
 );
+atlasUtils.addCustomObjectAtlas(
+  "WebDashersBall",
+  sheetBaseUrl + "player_ball_00.png",
+  sheetBaseUrl + "player_ball_00.json",
+);

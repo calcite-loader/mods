@@ -15,6 +15,7 @@ import type { HandleCollisionCallback } from "../worldUtils";
 import { getObjects } from "./objects" with { type: "macro" };
 import { GameMode, gamemode, gamemodes, setGamemode } from "./gamemodes";
 import "./assets";
+import { flipGravity, jumpForce } from "./utils";
 
 const worldUtils = api.lib<typeof import("../worldUtils")>("worldUtils");
 
@@ -62,14 +63,6 @@ api.onStart(() => {
 api.onDeath(() => {
   queueJump = false;
 });
-
-const flipGravity = (flipped: boolean, yMul: number = 0.5) => {
-  if (window.gdScene._state.gravityFlipped === flipped) return;
-  window.gdScene._state.gravityFlipped = flipped;
-  window.gdScene._state.yVelocity *= yMul;
-  window.gdScene._state.canJump = false;
-  window.gdScene._state.onGround = false;
-};
 
 worldUtils.registerNewColliderType(
   ObjectType.PAD,
@@ -132,8 +125,6 @@ worldUtils.registerNewColliderType(
   },
   ((object: GameObject & { _objId: number }) => {
     if (!object.activated && queueJump && window.gdScene._state.upKeyDown) {
-      const jumpForce = 22.360064;
-
       let yVel = 0;
       let flipAfter = false;
       let flipBefore = false;
