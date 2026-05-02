@@ -36,6 +36,24 @@ api.patchScript(
   },
 );
 
+// For Web Dashers
+api.patchScript(
+  "config.js",
+  (code) => {
+    code = code.replace(
+      /(let\s+playerSpeed\s*=\s*SpeedPortal.ONE_TIMES;)/,
+      `$1 window._physicsUtils.setPlayerSpeed = (newSpeed) => { playerSpeed = newSpeed }; window._physicsUtils.getPlayerSpeed = () => playerSpeed;`,
+    );
+
+    code = code.replace(
+      new RegExp(`const\\s+(\\w+)\\s*=\\s*${defaultJumpVelocity}\\s*;`),
+      `let $1 = ${defaultJumpVelocity}; window._physicsUtils.setJumpVelocity = (newVelocity) => { $1 = newVelocity }; window._physicsUtils.getJumpVelocity = () => $1;`,
+    );
+
+    return code;
+  },
+);
+
 export const setPlayerSpeed = (newSpeed: number) => {
   return window._physicsUtils.setPlayerSpeed(newSpeed);
 };
