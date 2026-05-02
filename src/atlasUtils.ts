@@ -13,6 +13,14 @@ declare global {
         y: number,
         frame: string,
       ) => Phaser.GameObjects.Image;
+      createSpriteLayer: (
+        scene: Phaser.Scene,
+        x: number,
+        y: number,
+        frame: string,
+        depth: number,
+        visible: boolean,
+      ) => { sprite: Phaser.GameObjects.Image };
     };
   }
 }
@@ -42,6 +50,24 @@ export const createImageFromAtlas:
   typeof window._atlasUtils.createImageFromAtlas = (scene, x, y, frame) => {
     return window._atlasUtils.createImageFromAtlas(scene, x, y, frame);
   };
+
+export const createSpriteLayer: typeof window._atlasUtils.createSpriteLayer = (
+  scene,
+  x,
+  y,
+  frame,
+  depth,
+  visible,
+) => {
+  return window._atlasUtils.createSpriteLayer(
+    scene,
+    x,
+    y,
+    frame,
+    depth,
+    visible,
+  );
+};
 
 interface CustomAtlas {
   key: string;
@@ -79,5 +105,15 @@ api.patchScript("index-game.js", (code) => {
       customAtlases.map((atlas) => `'${atlas.key}'`).join(", ")
     }]`,
   );
+
+  const createSpriteLayerName = code.match(
+    /function\s+([a-zA-Z]+)\s*\(\s*(?:_0x[\da-f]+,\s*){5}_0x[\da-f]+\s*\)\s*{/,
+  )?.[1]!;
+  const original = api.extractFunction(code, createSpriteLayerName);
+  code = code.replace(
+    original,
+    `${original};window._atlasUtils.createSpriteLayer = ${createSpriteLayerName};`,
+  );
+
   return code;
 });

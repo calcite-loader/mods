@@ -1,7 +1,7 @@
 {
   "name": "@calcite-loader/mods",
   "devDependencies": {
-    "@calcite-loader/types": "0.14.1",
+    "@calcite-loader/types": "0.14.7",
     "@types/bun": "^1.3.11"
   },
   "peerDependencies": {
