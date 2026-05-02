@@ -13,10 +13,10 @@ import {
 } from "@calcite-loader/types";
 import type { HandleCollisionCallback } from "../worldUtils";
 import { getObjects } from "./objects" with { type: "macro" };
+import { GameMode, gamemode, gamemodes, setGamemode } from "./gamemodes";
+import "./assets";
 
-const atlasUtils = api.lib<typeof import("../atlasUtils")>("atlasUtils");
 const worldUtils = api.lib<typeof import("../worldUtils")>("worldUtils");
-const physicsUtils = api.lib<typeof import("../physicsUtils")>("physicsUtils");
 
 worldUtils.modifyObjectDefinitions(() => {
   return getObjects() as unknown as ObjectDefinition[];
@@ -59,42 +59,8 @@ api.onStart(() => {
   }).bind(window.gdScene._player);
 });
 
-enum GameMode {
-  CUBE,
-  SHIP,
-  WAVE,
-}
-
-let gamemode: GameMode = GameMode.CUBE;
-
-declare global {
-  interface Window {
-    _resurrection: {
-      getGamemode: () => GameMode;
-    };
-  }
-}
-window._resurrection = {
-  getGamemode: () => gamemode,
-};
-
-const waveLayers: { sprite: Phaser.GameObjects.Image }[] = [];
-
 api.onDeath(() => {
-  gamemode = GameMode.CUBE;
-  waveLayers.forEach((layer) => layer.sprite.visible = false);
   queueJump = false;
-});
-
-api.onShip(() => {
-  gamemode = GameMode.SHIP;
-  waveLayers.forEach((layer) => layer.sprite.visible = false);
-  window.gdScene._player.setCubeVisible(true);
-});
-api.onCube(() => {
-  gamemode = GameMode.CUBE;
-  waveLayers.forEach((layer) => layer.sprite.visible = false);
-  window.gdScene._player.setCubeVisible(true);
 });
 
 const flipGravity = (flipped: boolean, yMul: number = 0.5) => {
@@ -227,25 +193,23 @@ worldUtils.registerNewColliderType(
       flipGravity(true, 0.6);
     } else if (object.type === "portal_gravity_flip") {
       flipGravity(false, 0.6);
-    } else if (object.type === "portal_wave") {
-      gamemode = GameMode.WAVE;
-      window.gdScene._state.isFlying = false;
-      window.gdScene._state.isJumping = false;
-      window.gdScene._state.canJump = false;
-      window.gdScene._state.onGround = false;
-      window.gdScene._state.onCeiling = false;
-      window.gdScene._state.yVelocity = 0;
-      window.gdScene._player.stopRotation();
-      window.gdScene._player._rotation = 0;
-      window.gdScene.toggleGlitter(false);
-      window.gdScene._player._streak.stop();
-      window.gdScene._player._streak.reset();
-      window.gdScene._state.y = object.portalY ?? object.y;
-      window.gdScene._level.setFlyMode(true, object.portalY ?? object.y);
-
-      window.gdScene._player.setCubeVisible(false);
-      window.gdScene._player.setShipVisible(false);
-      waveLayers.forEach((layer) => layer.sprite.visible = true);
+    } else {
+      for (const [type, info] of Object.entries(gamemodes)) {
+        if (info.portal === object.type && info.enterGamemode) {
+          const previousGamemode = gamemode;
+          setGamemode(Number(type));
+          info.enterGamemode(object.portalY ?? object.y);
+          if (info.layers) {
+            info.layers.forEach((layer) => layer.sprite.visible = true);
+          }
+          if (gamemodes[previousGamemode].layers) {
+            gamemodes[previousGamemode].layers.forEach((layer) =>
+              layer.sprite.visible = false
+            );
+          }
+          break;
+        }
+      }
     }
 
     return true;
@@ -254,64 +218,13 @@ worldUtils.registerNewColliderType(
 
 // Custom gamemode stuff
 api.onLoad(() => {
-  // Load super duper cool custom assets :)
-  const centerX = 419;
-  const groundY = 460;
-
-  const waveSpriteLayer = atlasUtils.createSpriteLayer(
-    window.gdScene,
-    centerX,
-    groundY - window.gdScene._state.y,
-    "player_dart_00_001.png",
-    10,
-    false,
-  );
-  waveSpriteLayer.sprite.setScale(0.42).setTint(0x00ff00);
-
-  const waveOverlayLayer = atlasUtils.createSpriteLayer(
-    window.gdScene,
-    centerX,
-    groundY - window.gdScene._state.y,
-    "player_dart_00_2_001.png",
-    8,
-    false,
-  );
-  waveOverlayLayer.sprite.setScale(0.42).setTint(0x00ffff);
-
-  const waveGlowLayer = atlasUtils.createSpriteLayer(
-    window.gdScene,
-    centerX,
-    groundY - window.gdScene._state.y,
-    "player_dart_00_glow_001.png",
-    9,
-    false,
-  );
-  waveGlowLayer.sprite.setScale(0.42).setTint(0x00ffff);
-
-  waveLayers.push(waveSpriteLayer, waveOverlayLayer, waveGlowLayer);
-  window.gdScene._player._allLayers.push(...waveLayers);
-
   const originalUpdateJump = window.gdScene._player.updateJump.bind(
     window.gdScene._player,
   );
   window.gdScene._player.updateJump = function (this: Player, delta: number) {
     if (gamemode === GameMode.CUBE || gamemode === GameMode.SHIP) {
       originalUpdateJump(delta);
-    } else if (gamemode === GameMode.WAVE) {
-      this.p.yVelocity = (this.p.upKeyDown
-        ? physicsUtils.getPlayerSpeed()
-        : -physicsUtils.getPlayerSpeed()) * this.flipMod();
-      this._rotation = this.p.upKeyDown ? -Math.PI / 4 : Math.PI / 4;
-
-      if (this.p.onGround) {
-        if (this.p.onCeiling ? this.p.yVelocity < 0 : this.p.yVelocity > 0) {
-          this.p.onGround = false;
-        } else {
-          this.p.yVelocity = 0;
-          this._rotation = 0;
-        }
-      }
-    }
+    } else gamemodes[gamemode].updateJump?.call(this, delta);
   };
 });
 
@@ -320,7 +233,7 @@ api.patchMethod("checkCollisions", (code) => {
   // Wave Hitbox
   code = code.replaceAll(
     /([^_])0x1e/g,
-    `$1(window._resurrection.getGamemode() === ${GameMode.WAVE} ? 9 : 30)`,
+    `$1(window._resurrection.getGamemode().hitboxSize)`,
   );
 
   code = code.replace(
@@ -371,22 +284,3 @@ api.onUpdate(() => {
     }
   }
 }, "after");
-
-// Steal assets from Web Dashers :)
-const sheetBaseUrl =
-  "https://raw.githubusercontent.com/web-dashers/web-dashers.github.io/refs/heads/main/assets/sheets/";
-atlasUtils.addCustomObjectAtlas(
-  "WebDashers1",
-  sheetBaseUrl + "GJ_GameSheet.png",
-  sheetBaseUrl + "GJ_GameSheet.json",
-);
-atlasUtils.addCustomObjectAtlas(
-  "WebDashers2",
-  sheetBaseUrl + "GJ_GameSheet02.png",
-  sheetBaseUrl + "GJ_GameSheet02.json",
-);
-atlasUtils.addCustomObjectAtlas(
-  "WebDashersDart",
-  sheetBaseUrl + "player_dart_00.png",
-  sheetBaseUrl + "player_dart_00.json",
-);
