@@ -4,50 +4,19 @@
  * @deps atlasUtils, worldUtils
  */
 
-import { type GameObject, ObjectType } from "@calcite-loader/types";
-import type { HandleCollisionCallback } from "./worldUtils";
+import {
+  type GameObject,
+  type ObjectDefinition,
+  ObjectType,
+} from "@calcite-loader/types";
+import type { HandleCollisionCallback } from "../worldUtils";
+import { getObjects } from "./objects" with { type: "macro" };
 
-const atlasUtils = api.lib<typeof import("./atlasUtils")>("atlasUtils");
-const worldUtils = api.lib<typeof import("./worldUtils")>("worldUtils");
+const atlasUtils = api.lib<typeof import("../atlasUtils")>("atlasUtils");
+const worldUtils = api.lib<typeof import("../worldUtils")>("worldUtils");
 
-worldUtils.modifyObjectDefinitions((definitions) => {
-  // Fix Pad Sizes
-  for (const id of [35, 67, 140]) {
-    definitions[id]!.gridW = 0.8333333134651184;
-    definitions[id]!.gridH = 0.13333334028720856;
-  }
-
-  // Add Red Pad
-  definitions[1332] = {
-    ...definitions[35]!,
-    frame: "bump_02_001.png",
-  };
-
-  // Fix Blue Pad
-  definitions[67]!.frame = "gravbump_01_001.png";
-
-  // Fix Blue Orb
-  definitions[84]!.frame = "gravring_01_001.png";
-
-  // Add Green Orb
-  definitions[1022] = {
-    ...definitions[84]!,
-    frame: "gravJumpRing_01_001.png",
-  };
-
-  // Add Red Orb
-  definitions[1333] = {
-    ...definitions[36]!,
-    frame: "ring_02_001.png",
-  };
-
-  // Add Black Orb
-  definitions[1330] = {
-    ...definitions[36]!,
-    frame: "dropRing_01_001.png",
-  };
-
-  return definitions;
+worldUtils.modifyObjectDefinitions(() => {
+  return getObjects() as unknown as ObjectDefinition[];
 });
 
 // Stuff for buffering
@@ -91,7 +60,7 @@ api.onDeath(() => {
   queueJump = false;
 });
 
-const flipGravity = (flipped: boolean, yMul: number = -0.5) => {
+const flipGravity = (flipped: boolean, yMul: number = 0.5) => {
   if (window.gdScene._state.gravityFlipped === flipped) return;
   window.gdScene._state.gravityFlipped = flipped;
   window.gdScene._state.yVelocity *= yMul;
@@ -137,7 +106,7 @@ worldUtils.registerNewColliderType(
     window.gdScene._state.yVelocity = yVel * window.gdScene._player.flipMod();
     window.gdScene._player.runRotateAction();
 
-    if (flip) flipGravity(!window.gdScene._state.gravityFlipped, 0.5);
+    if (flip) flipGravity(!window.gdScene._state.gravityFlipped);
 
     return true;
   }) as HandleCollisionCallback,
@@ -188,10 +157,10 @@ worldUtils.registerNewColliderType(
       window.gdScene._state.canJump = false;
       queueJump = false;
       window.gdScene._state.upKeyPressed = false;
-      if (flipBefore) flipGravity(!window.gdScene._state.gravityFlipped, 0.5);
+      if (flipBefore) flipGravity(!window.gdScene._state.gravityFlipped);
       window.gdScene._state.yVelocity = window.gdScene._player.flipMod() * yVel;
       window.gdScene._player.runRotateAction();
-      if (flipAfter) flipGravity(!window.gdScene._state.gravityFlipped, 0.5);
+      if (flipAfter) flipGravity(!window.gdScene._state.gravityFlipped);
 
       return true;
     }
@@ -218,9 +187,9 @@ worldUtils.registerNewColliderType(
     object.activated = true;
 
     if (object.type === "portal_gravity_normal") {
-      flipGravity(true);
+      flipGravity(true, 0.75);
     } else if (object.type === "portal_gravity_flip") {
-      flipGravity(false);
+      flipGravity(false, 0.75);
     }
 
     return true;

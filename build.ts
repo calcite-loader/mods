@@ -47,19 +47,25 @@ const manifest = {
 };
 
 (async () => {
-  const files = [...new Glob("*.ts").scanSync("src/")];
+  const files = [
+    ...new Glob("*.ts").scanSync("src/"),
+    ...new Glob("*/index.ts").scanSync("src/"),
+  ];
 
   for (const file of files) {
     if (file.endsWith(".d.ts")) continue;
 
-    const id = path.parse(file).name;
+    const parsed = path.parse(file);
+    const id = parsed.name === "index"
+      ? path.basename(parsed.dir)
+      : parsed.name;
     const inputPath = path.join("src", file);
     const outputPath = path.join("dist", `${id}.js`);
 
     const result = await Bun.build({
       entrypoints: [inputPath],
       outdir: "./dist",
-      naming: "[name].[ext]",
+      naming: `${id}.js`,
       minify: !isDebug,
       define: {
         BUILD_MODE: isDebug ? "'debug'" : "'release'",

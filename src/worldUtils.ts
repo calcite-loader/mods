@@ -69,25 +69,28 @@ export const enableLevel = () => {
 // Object Definitions
 
 api.patchScript("index-game.js", (code) => {
-  const match = code.match(
-    /,\s*(\w+)\s*=\s*{\s*0x1:\s*{\s*'type'\s*:\s*\w+\s*,\s*'frame'/,
-  );
+  const objectDefinitionRegex =
+    /,\s*(\w+)\s*=\s*({\s*0x1:\s*{\s*'type'\s*:\s*\w+\s*,\s*'frame')/;
+  const match = code.match(objectDefinitionRegex);
+
+  code = code.replace(objectDefinitionRegex, "; let $1 = $2");
+
   if (!match || !match[1]) return code;
-  const index = code.indexOf(";", match.index) + 1;
+  const index = code.indexOf(";", match.index! + 2) + 1;
   return code.slice(0, index) +
-    `window._worldUtils.objectDefinitions = ${match[1]};` +
+    `window._worldUtils.objectDefinitions = ${match[1]}; ${
+      match[1]
+    } = window._worldUtils.objectDefinitions;` +
     code.slice(index);
 });
 
-let modifiers: ((
+type ObjectDefinitionModifier = (
   objectDefinitions: Record<number, ObjectDefinition>,
-) => Record<number, ObjectDefinition>)[] = [];
+) => Record<number, ObjectDefinition>;
 
-export const modifyObjectDefinitions = (
-  cb: (
-    objectDefinitions: Record<number, ObjectDefinition>,
-  ) => Record<number, ObjectDefinition>,
-) => {
+let modifiers: ObjectDefinitionModifier[] = [];
+
+export const modifyObjectDefinitions = (cb: ObjectDefinitionModifier) => {
   modifiers.push(cb);
 };
 
@@ -160,6 +163,11 @@ window._worldUtils.runHandleCollisionCallback = (index, object) => {
 let gameObjectClassName: string;
 
 api.patchMethod("_spawnLevelObjects", (code) => {
+  code = code.replace(
+    "{",
+    "{console.log(window._worldUtils.objectDefinitions);",
+  );
+
   const gameObjectRegex = /new\s+(?!Set\s*\()(\w+)/;
   gameObjectClassName = code.match(gameObjectRegex)?.[1]!;
 
