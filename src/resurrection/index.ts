@@ -13,7 +13,14 @@ import {
 } from "@calcite-loader/types";
 import type { HandleCollisionCallback } from "../worldUtils";
 import { getObjects } from "./objects" with { type: "macro" };
-import { GameMode, gamemode, gamemodes, Orb, setGamemode } from "./gamemodes";
+import {
+  GameMode,
+  gamemode,
+  gamemodes,
+  Orb,
+  Pad,
+  setGamemode,
+} from "./gamemodes";
 import "./assets";
 import { flipGravity } from "./utils";
 
@@ -22,6 +29,8 @@ const worldUtils = api.lib<typeof import("../worldUtils")>("worldUtils");
 worldUtils.modifyObjectDefinitions(() => {
   return getObjects() as unknown as ObjectDefinition[];
 });
+
+let pendingVelocity: number | null = null;
 
 // Stuff for buffering
 let queueJump = false;
@@ -83,26 +92,22 @@ worldUtils.registerNewColliderType(
     if (object.activated) return false;
     object.activated = true;
 
-    let yVel = 0;
-    let flip = false;
-    if (object._objId === 35) { // Yellow
-      yVel = 33;
-    } else if (object._objId === 1332) { // Red
-      yVel = 41;
-    } else if (object._objId === 140) { // Pink
-      yVel = 20.8;
-    } else if (object._objId === 67) { // Blue
-      yVel = 30;
-      flip = true;
+    const padInfo = gamemodes[gamemode].padInfo[object._objId as Pad];
+
+    if (padInfo) {
+      window.gdScene._state.isJumping = true;
+      window.gdScene._state.canJump = false;
+      window.gdScene._state.onGround = false;
+
+      if (padInfo.yVel) {
+        window.gdScene._state.yVelocity = padInfo.yVel *
+          window.gdScene._player.flipMod();
+      }
+      if (padInfo.pendingVel) pendingVelocity = padInfo.pendingVel;
+      if (padInfo.flip) flipGravity(!window.gdScene._state.gravityFlipped);
+
+      window.gdScene._player.runRotateAction();
     }
-
-    window.gdScene._state.isJumping = true;
-    window.gdScene._state.canJump = false;
-    window.gdScene._state.onGround = false;
-    window.gdScene._state.yVelocity = yVel * window.gdScene._player.flipMod();
-    window.gdScene._player.runRotateAction();
-
-    if (flip) flipGravity(!window.gdScene._state.gravityFlipped);
 
     return true;
   }) as HandleCollisionCallback,
@@ -204,6 +209,11 @@ api.onLoad(() => {
     window.gdScene._player,
   );
   window.gdScene._player.updateJump = function (this: Player, delta: number) {
+    if (pendingVelocity != null) {
+      this.p.yVelocity = pendingVelocity;
+      pendingVelocity = null;
+    }
+
     if (gamemode === GameMode.CUBE || gamemode === GameMode.SHIP) {
       originalUpdateJump(delta);
     } else gamemodes[gamemode].updateJump?.call(this, delta);

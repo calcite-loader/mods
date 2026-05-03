@@ -24,6 +24,19 @@ export interface OrbInfo {
   flipAfter?: boolean;
 }
 
+export enum Pad {
+  YELLOW = 35,
+  BLUE = 67,
+  RED = 1332,
+  PINK = 140,
+}
+
+export interface PadInfo {
+  yVel?: number;
+  pendingVel?: number;
+  flip?: boolean;
+}
+
 export enum GameMode {
   CUBE,
   SHIP,
@@ -39,6 +52,7 @@ export interface GameModeInfo {
   portal?: string;
   enterGamemode?: (portalY: number) => void;
   orbInfo: Partial<Record<Orb, OrbInfo>>;
+  padInfo: Partial<Record<Pad, PadInfo>>;
 }
 
 export let gamemode: GameMode = GameMode.CUBE;
@@ -53,6 +67,12 @@ export const gamemodes: Record<GameMode, GameModeInfo> = {
       [Orb.BLACK]: { yVel: -18 },
       [Orb.PINK]: { yVel: jumpForce * 0.72 },
     },
+    padInfo: {
+      [Pad.YELLOW]: { yVel: 32 },
+      [Pad.RED]: { yVel: 40 },
+      [Pad.PINK]: { yVel: 20.8 },
+      [Pad.BLUE]: { yVel: 30, flip: true },
+    },
   },
   [GameMode.SHIP]: {
     hitboxSize: 30,
@@ -63,6 +83,12 @@ export const gamemodes: Record<GameMode, GameModeInfo> = {
       [Orb.RED]: { yVel: jumpForce },
       [Orb.BLACK]: { yVel: -28 },
       [Orb.PINK]: { yVel: jumpForce * 0.37 },
+    },
+    padInfo: {
+      [Pad.YELLOW]: { yVel: 32, pendingVel: 16 },
+      [Pad.RED]: { yVel: 20.16 },
+      [Pad.PINK]: { yVel: 11.2 },
+      [Pad.BLUE]: { yVel: 30, flip: true },
     },
   },
   [GameMode.WAVE]: {
@@ -139,6 +165,9 @@ export const gamemodes: Record<GameMode, GameModeInfo> = {
     orbInfo: {
       [Orb.BLUE]: { flipAfter: true },
       [Orb.GREEN]: { flipAfter: true },
+    },
+    padInfo: {
+      [Pad.BLUE]: { flip: true },
     },
   },
   [GameMode.BALL]: {
@@ -226,6 +255,12 @@ export const gamemodes: Record<GameMode, GameModeInfo> = {
       [Orb.RED]: { yVel: ballJumpForce * 1.34 },
       [Orb.BLACK]: { yVel: -30 },
       [Orb.PINK]: { yVel: ballJumpForce * 0.77 },
+    },
+    padInfo: {
+      [Pad.YELLOW]: { yVel: 19.2 },
+      [Pad.RED]: { yVel: 24 },
+      [Pad.PINK]: { yVel: 13.44 },
+      [Pad.BLUE]: { yVel: 20, flip: true },
     },
   },
 } as const;
