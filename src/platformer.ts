@@ -4,11 +4,13 @@
  * @deps physicsUtils
  */
 
+import type { GameObject } from "@calcite-loader/types";
+
 declare global {
   interface Window {
     _platformer: {
-      handleWallCollision: (object: any) => boolean;
-      handleHitHead: (object: any) => void;
+      handleWallCollision: (object: GameObject) => boolean;
+      handleHitHead: (object: GameObject) => void;
       playerDirection: 1 | -1 | 0;
     };
   }
@@ -23,35 +25,47 @@ const physicsUtils = api.lib<typeof import("./physicsUtils")>("physicsUtils");
 
 api.patchMethod("runRotateAction", (code) => {
   return code.replace(
-    "Math['PI']",
-    "Math['PI']*window._platformer.playerDirection",
+    /Math(?:\['PI'\]|\.PI)/,
+    "Math.PI*window._platformer.playerDirection",
   );
 });
 
 api.patchMethod("checkCollisions", (code) => {
-  const objectVarName = code.match(/for\s*\(\s*let\s+(_0x[\da-f]+)/)?.[1];
+  if (window.location.host === "web-dashers.github.io") {
+    code = code.replace(
+      /if\s*\(\s*iscolliding\s*&&\s*!\s*isstandingOnAPlatform\s*\)\s*{/,
+      "if (!isstandingOnAPlatform) { window._platformer.handleWallCollision(gameObj); continue;",
+    );
 
-  code = code.replace(
-    /if\s*\(\s*_0x[\da-f]+\s*&&\s*!\s*(_0x[a-f\d]+)\s*\)\s*return\s+void\s+this\s*\[\s*_0x[\da-f]+\s*\(\s*0x[\da-f]+\s*\)\s*\]\s*\(\s*\)/,
-    `if (!$1) { if (window._platformer.handleWallCollision(${objectVarName})) continue }`,
-  );
+    code = code.replaceAll(
+      /&&\s*this\.p\.isFlying\s*\)\s*{/g,
+      ") { window._platformer.handleHitHead(gameObj); continue;",
+    );
+  } else {
+    const objectVarName = code.match(/for\s*\(\s*let\s+(_0x[\da-f]+)/)?.[1];
 
-  const index = code.indexOf("{", code.indexOf("&&this['p']")) + 1;
-  code = code.slice(0, index) +
-    `window._platformer.handleHitHead(${objectVarName});continue;` +
-    code.slice(index);
+    code = code.replace(
+      /if\s*\(\s*_0x[\da-f]+\s*&&\s*!\s*(_0x[a-f\d]+)\s*\)\s*return\s+void\s+this\s*\[\s*_0x[\da-f]+\s*\(\s*0x[\da-f]+\s*\)\s*\]\s*\(\s*\)/,
+      `if (!$1) { if (window._platformer.handleWallCollision(${objectVarName})) continue }`,
+    );
 
-  code = code.replace(
-    "&&this['p']",
-    "&&({isFlying:true})",
-  );
+    const index = code.indexOf("{", code.indexOf("&&this['p']")) + 1;
+    code = code.slice(0, index) +
+      `window._platformer.handleHitHead(${objectVarName});continue;` +
+      code.slice(index);
+
+    code = code.replace(
+      "&&this['p']",
+      "&&({isFlying:true})",
+    );
+  }
 
   return code;
 });
 
 let playerWorldX: number;
 
-window._platformer.handleWallCollision = (object: any) => {
+window._platformer.handleWallCollision = (object) => {
   const checkIsColliding = () => {
     const worldX = playerWorldX;
     const playerY = window.gdScene._state.y;
@@ -76,13 +90,19 @@ window._platformer.handleWallCollision = (object: any) => {
   return true;
 };
 
-window._platformer.handleHitHead = (object: any) => {
-  window.gdScene._state.y = (object.y - object.h / 2) - 30;
+window._platformer.handleHitHead = (object) => {
+  window.gdScene._state.y = window.gdScene._state.gravityFlipped
+    ? ((object.y + object.h / 2) + 30)
+    : ((object.y - object.h / 2) - 30);
 
   if (window.gdScene._state.isFlying) {
     window.gdScene._player.hitGround();
     window.gdScene._state.onCeiling = true;
-    window.gdScene._state.collideBottom = (object.y - object.h) / 2;
+    if (window.gdScene._state.gravityFlipped) {
+      window.gdScene._state.collideTop = object.y + object.h / 2;
+    } else {
+      window.gdScene._state.collideBottom = object.y - object.h / 2;
+    }
     return;
   }
 
