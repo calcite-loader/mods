@@ -48,7 +48,7 @@ declare global {
 
 export const loadLevel = (levelstring: string) => {
   api.patchMethod("loadLevel", (code) => {
-    const argName = code.match(/\((_0x[\da-f]+)\)/)?.[1];
+    const argName = code.match(/\((_0x[\da-f]+)\)/)?.[1] ?? "levelData";
 
     return code.replace("{", `{var ${argName} = "${levelstring}";`);
   });
