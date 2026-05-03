@@ -1,11 +1,28 @@
 import type { Player } from "@calcite-loader/types";
 import { flipGravity, jumpForce } from "./utils";
 
+const ballJumpForce = jumpForce * 0.7;
+
 const physicsUtils = api.lib<typeof import("../physicsUtils")>("physicsUtils");
 const atlasUtils = api.lib<typeof import("../atlasUtils")>("atlasUtils");
 
 const centerX = 419;
 const groundY = 460;
+
+export enum Orb {
+  YELLOW = 36,
+  BLUE = 84,
+  GREEN = 1022,
+  RED = 1333,
+  BLACK = 1330,
+  PINK = 141,
+}
+
+export interface OrbInfo {
+  yVel?: number;
+  flipBefore?: boolean;
+  flipAfter?: boolean;
+}
 
 export enum GameMode {
   CUBE,
@@ -21,15 +38,32 @@ export interface GameModeInfo {
   updateJump?: (delta: number) => void;
   portal?: string;
   enterGamemode?: (portalY: number) => void;
+  orbInfo: Partial<Record<Orb, OrbInfo>>;
 }
 
 export let gamemode: GameMode = GameMode.CUBE;
 export const gamemodes: Record<GameMode, GameModeInfo> = {
   [GameMode.CUBE]: {
     hitboxSize: 30,
+    orbInfo: {
+      [Orb.YELLOW]: { yVel: jumpForce },
+      [Orb.BLUE]: { yVel: jumpForce, flipBefore: true },
+      [Orb.GREEN]: { yVel: jumpForce, flipAfter: true },
+      [Orb.RED]: { yVel: jumpForce * 1.38 },
+      [Orb.BLACK]: { yVel: -18 },
+      [Orb.PINK]: { yVel: jumpForce * 0.72 },
+    },
   },
   [GameMode.SHIP]: {
     hitboxSize: 30,
+    orbInfo: {
+      [Orb.YELLOW]: { yVel: 16 },
+      [Orb.BLUE]: { yVel: jumpForce * 0.4, flipAfter: true },
+      [Orb.GREEN]: { yVel: jumpForce * -0.7, flipAfter: true },
+      [Orb.RED]: { yVel: jumpForce },
+      [Orb.BLACK]: { yVel: -28 },
+      [Orb.PINK]: { yVel: jumpForce * 0.37 },
+    },
   },
   [GameMode.WAVE]: {
     layers: [],
@@ -101,6 +135,10 @@ export const gamemodes: Record<GameMode, GameModeInfo> = {
 
       window.gdScene._player.setCubeVisible(false);
       window.gdScene._player.setShipVisible(false);
+    },
+    orbInfo: {
+      [Orb.BLUE]: { flipAfter: true },
+      [Orb.GREEN]: { flipAfter: true },
     },
   },
   [GameMode.BALL]: {
@@ -180,6 +218,14 @@ export const gamemodes: Record<GameMode, GameModeInfo> = {
 
       window.gdScene._player.setCubeVisible(false);
       window.gdScene._player.setShipVisible(false);
+    },
+    orbInfo: {
+      [Orb.YELLOW]: { yVel: ballJumpForce },
+      [Orb.BLUE]: { yVel: jumpForce * 0.4, flipAfter: true },
+      [Orb.GREEN]: { yVel: -jumpForce, flipAfter: true },
+      [Orb.RED]: { yVel: ballJumpForce * 1.34 },
+      [Orb.BLACK]: { yVel: -30 },
+      [Orb.PINK]: { yVel: ballJumpForce * 0.77 },
     },
   },
 } as const;

@@ -13,9 +13,9 @@ import {
 } from "@calcite-loader/types";
 import type { HandleCollisionCallback } from "../worldUtils";
 import { getObjects } from "./objects" with { type: "macro" };
-import { GameMode, gamemode, gamemodes, setGamemode } from "./gamemodes";
+import { GameMode, gamemode, gamemodes, Orb, setGamemode } from "./gamemodes";
 import "./assets";
-import { flipGravity, jumpForce } from "./utils";
+import { flipGravity } from "./utils";
 
 const worldUtils = api.lib<typeof import("../worldUtils")>("worldUtils");
 
@@ -125,36 +125,27 @@ worldUtils.registerNewColliderType(
   },
   ((object: GameObject & { _objId: number }) => {
     if (!object.activated && queueJump && window.gdScene._state.upKeyDown) {
-      let yVel = 0;
-      let flipAfter = false;
-      let flipBefore = false;
-
-      if (object._objId === 36) { // Yellow
-        yVel = jumpForce;
-      } else if (object._objId === 84) { // Blue
-        yVel = jumpForce;
-        flipAfter = true;
-      } else if (object._objId === 1022) { // Green
-        yVel = jumpForce;
-        flipBefore = true;
-      } else if (object._objId === 1333) { // Red
-        yVel = jumpForce * 1.38;
-      } else if (object._objId === 1330) { // Black
-        yVel = -18;
-      } else if (object._objId === 141) { // Pink
-        yVel = jumpForce * 0.72;
-      }
-
       object.activated = true;
       window.gdScene._state.isJumping = true;
       window.gdScene._state.onGround = false;
       window.gdScene._state.canJump = false;
       queueJump = false;
       window.gdScene._state.upKeyPressed = false;
-      if (flipBefore) flipGravity(!window.gdScene._state.gravityFlipped);
-      window.gdScene._state.yVelocity = window.gdScene._player.flipMod() * yVel;
-      window.gdScene._player.runRotateAction();
-      if (flipAfter) flipGravity(!window.gdScene._state.gravityFlipped);
+
+      const orbInfo = gamemodes[gamemode].orbInfo[object._objId as Orb];
+      if (orbInfo) {
+        if (orbInfo.flipBefore) {
+          flipGravity(!window.gdScene._state.gravityFlipped);
+        }
+        if (orbInfo.yVel) {
+          window.gdScene._state.yVelocity = window.gdScene._player.flipMod() *
+            orbInfo.yVel;
+        }
+        window.gdScene._player.runRotateAction();
+        if (orbInfo.flipAfter) {
+          flipGravity(!window.gdScene._state.gravityFlipped);
+        }
+      }
 
       return true;
     }
