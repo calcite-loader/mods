@@ -1,5 +1,6 @@
 /*
  * @name Custom Background Tint
+ * @compatibleHosts geometrydash.com, web-dashers.github.io
  */
 
 let originalSetTint: typeof window.gdScene._bg.setTint;

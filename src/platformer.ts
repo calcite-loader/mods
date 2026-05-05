@@ -2,6 +2,7 @@
  * @name Platformer Mode
  * @needsRefresh true
  * @deps physicsUtils
+ * @compatibleHosts geometrydash.com, web-dashers.github.io
  */
 
 import type { GameObject } from "@calcite-loader/types";

@@ -2,6 +2,7 @@
  * @name Level Loader
  * @needsRefresh true
  * @deps worldUtils
+ * @compatibleHosts geometrydash.com, web-dashers.github.io
  */
 
 const settings = api.registerSettings({

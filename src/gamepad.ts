@@ -1,5 +1,6 @@
 /**
  * @name Gamepad
+ * @compatibleHosts geometrydash.com, web-dashers.github.io
  */
 
 let gamepad: Gamepad | null | undefined = navigator.getGamepads()[0];

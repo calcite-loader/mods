@@ -1,5 +1,6 @@
 /*
  * @name Custom Icon
+ * @compatibleHosts geometrydash.com, web-dashers.github.io
  */
 
 const settings = api.registerSettings({

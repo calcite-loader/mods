@@ -2,6 +2,7 @@
  * @name World Utils
  * @type library
  * @needsRefresh true
+ * @compatibleHosts geometrydash.com, web-dashers.github.io
  */
 
 import type {

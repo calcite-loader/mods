@@ -2,6 +2,7 @@
  * @name Physics Utils
  * @type library
  * @needsRefresh true
+ * @compatibleHosts geometrydash.com, web-dashers.github.io
  */
 
 declare global {

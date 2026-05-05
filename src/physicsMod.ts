@@ -2,6 +2,7 @@
  * @name Physics Mod
  * @needsRefresh true
  * @deps physicsUtils
+ * @compatibleHosts geometrydash.com, web-dashers.github.io
  */
 
 const settings = api.registerSettings({

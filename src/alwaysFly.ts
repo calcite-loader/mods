@@ -1,5 +1,6 @@
 /*
  * @name Always Fly
+ * @compatibleHosts geometrydash.com, web-dashers.github.io
  */
 
 api.onLoad(() => {
