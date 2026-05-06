@@ -157,10 +157,6 @@ api.onStart(() => {
     physicsUtils.setPlayerSpeed(
       defaultSpeed * window._platformer.playerDirection,
     );
-
-    if (window._platformer.playerDirection != 0) {
-      window.gdScene._player.runRotateAction();
-    }
   };
 
   [leftKey, rightKey, aKey, dKey].forEach((key) => {
@@ -193,10 +189,9 @@ api.onStart(() => {
           defaultSpeed * window._platformer.playerDirection,
         );
 
-        if (
-          window._platformer.playerDirection != oldDireciton &&
-          window._platformer.playerDirection != 0
-        ) window.gdScene._player.runRotateAction();
+        if (window._platformer.playerDirection != oldDireciton) {
+          window.gdScene._player.runRotateAction();
+        }
       }, "before");
     });
   }
