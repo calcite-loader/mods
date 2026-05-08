@@ -210,28 +210,57 @@ window._platformer.onJump = () => {
   for (const layer of window.gdScene._player._playerLayers) {
     if (!layer) continue;
 
-    window.gdScene.tweens.chain({
-      targets: layer.sprite,
-      tweens: [
-        {
-          scaleX: 0.8,
-          scaleY: 1.35,
-          duration: 150,
-          ease: Phaser.Math.Easing.Sine.InOut,
-        },
-        {
-          scaleX: 1.1,
-          scaleY: 0.9,
-          duration: 125,
-          ease: Phaser.Math.Easing.Sine.InOut,
-        },
-        {
-          scaleX: 1,
-          scaleY: 1,
-          duration: 125,
-          ease: Phaser.Math.Easing.Sine.InOut,
-        },
-      ],
-    });
+    if (
+      (window.gdScene._player._rotation / Math.PI) % 1 > 0.6 ||
+      (window.gdScene._player._rotation / Math.PI) % 1 < 0.4
+    ) {
+      window.gdScene.tweens.chain({
+        targets: layer.sprite,
+        tweens: [
+          {
+            scaleX: 0.8,
+            scaleY: 1.35,
+            duration: 150,
+            ease: Phaser.Math.Easing.Sine.InOut,
+          },
+          {
+            scaleX: 1.1,
+            scaleY: 0.9,
+            duration: 125,
+            ease: Phaser.Math.Easing.Sine.InOut,
+          },
+          {
+            scaleX: 1,
+            scaleY: 1,
+            duration: 125,
+            ease: Phaser.Math.Easing.Sine.InOut,
+          },
+        ],
+      });
+    } else {
+      window.gdScene.tweens.chain({
+        targets: layer.sprite,
+        tweens: [
+          {
+            scaleX: 1.35,
+            scaleY: 0.8,
+            duration: 150,
+            ease: Phaser.Math.Easing.Sine.InOut,
+          },
+          {
+            scaleX: 0.9,
+            scaleY: 1.1,
+            duration: 125,
+            ease: Phaser.Math.Easing.Sine.InOut,
+          },
+          {
+            scaleX: 1,
+            scaleY: 1,
+            duration: 125,
+            ease: Phaser.Math.Easing.Sine.InOut,
+          },
+        ],
+      });
+    }
   }
 };
