@@ -301,3 +301,28 @@ window._platformer.onJump = () => {
     });
   };
 };
+
+// Easing Camera
+api.onLoad(() => {
+  let cameraX = window.gdScene._cameraX;
+  const easeSpeed = 0.12;
+
+  Object.defineProperty(window.gdScene, "_cameraX", {
+    get: () => cameraX,
+    set: (newCameraX) => {
+      if (newCameraX != window.gdScene._playerWorldX - 419) {
+        cameraX = newCameraX;
+      } else if (cameraX !== newCameraX) {
+        cameraX += (newCameraX - cameraX) * easeSpeed;
+      }
+    },
+  });
+});
+
+// Fix ground land emitters
+api.patchMethod("hitGround", (code) => {
+  return code.replace(
+    /\)\]\(0xa,_0x[\da-f]+,(_0x[\da-f]+)/,
+    ")](10, window.gdScene._playerWorldX, $1",
+  );
+});
