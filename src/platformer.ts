@@ -2,7 +2,6 @@
  * @name Platformer Mode
  * @needsRefresh true
  * @deps physicsUtils
- * @compatibleHosts geometrydash.com, web-dashers.github.io
  */
 
 import type { GameObject } from "@calcite-loader/types";
@@ -13,6 +12,7 @@ declare global {
       handleWallCollision: (object: GameObject) => boolean;
       handleHitHead: (object: GameObject) => void;
       playerDirection: 1 | -1 | 0;
+      onJump: () => void;
     };
   }
 }
@@ -196,3 +196,42 @@ api.onStart(() => {
     });
   }
 });
+
+api.patchMethod("updateJump", (code) => {
+  return code.replace(
+    /(this\['p'\]\[_0x[\da-f]+\(0x[\da-f]+\)\]&&this\['p'\]\[_0x[\da-f]+\(0x[\da-f]+\)\]\))/,
+    "$1 window._platformer.onJump(),",
+  );
+});
+
+window._platformer.onJump = () => {
+  if (window._platformer.playerDirection != 0) return;
+
+  for (const layer of window.gdScene._player._playerLayers) {
+    if (!layer) continue;
+
+    window.gdScene.tweens.chain({
+      targets: layer.sprite,
+      tweens: [
+        {
+          scaleX: 0.8,
+          scaleY: 1.35,
+          duration: 150,
+          ease: Phaser.Math.Easing.Sine.InOut,
+        },
+        {
+          scaleX: 1.1,
+          scaleY: 0.9,
+          duration: 125,
+          ease: Phaser.Math.Easing.Sine.InOut,
+        },
+        {
+          scaleX: 1,
+          scaleY: 1,
+          duration: 125,
+          ease: Phaser.Math.Easing.Sine.InOut,
+        },
+      ],
+    });
+  }
+};
