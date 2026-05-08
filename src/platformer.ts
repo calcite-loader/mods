@@ -2,6 +2,7 @@
  * @name Platformer Mode
  * @needsRefresh true
  * @deps physicsUtils
+ * @conflicts hitboxes
  */
 
 import type { GameObject } from "@calcite-loader/types";
@@ -33,11 +34,13 @@ api.patchMethod("runRotateAction", (code) => {
 
 api.patchMethod("checkCollisions", (code) => {
   if (window.location.host === "web-dashers.github.io") {
+    // Wall Collisions
     code = code.replace(
       /if\s*\(\s*iscolliding\s*&&\s*!\s*isstandingOnAPlatform\s*\)\s*{/,
       "if (!isstandingOnAPlatform) { window._platformer.handleWallCollision(gameObj); continue;",
     );
 
+    // Head Collisions (broken on Web Dashers rn)
     code = code.replaceAll(
       /&&\s*this\.p\.isFlying\s*\)\s*{/g,
       ") { window._platformer.handleHitHead(gameObj); continue;",
@@ -45,11 +48,13 @@ api.patchMethod("checkCollisions", (code) => {
   } else {
     const objectVarName = code.match(/for\s*\(\s*let\s+(_0x[\da-f]+)/)?.[1];
 
+    // Wall Collisions
     code = code.replace(
       /if\s*\(\s*_0x[\da-f]+\s*&&\s*!\s*(_0x[a-f\d]+)\s*\)\s*return\s+void\s+this\s*\[\s*_0x[\da-f]+\s*\(\s*0x[\da-f]+\s*\)\s*\]\s*\(\s*\)/,
       `if (!$1) { if (window._platformer.handleWallCollision(${objectVarName})) continue }`,
     );
 
+    // Head Collisions
     const index = code.indexOf("{", code.indexOf("&&this['p']")) + 1;
     code = code.slice(0, index) +
       `window._platformer.handleHitHead(${objectVarName});continue;` +
