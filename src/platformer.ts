@@ -110,6 +110,9 @@ window._platformer.handleHitHead = (object) => {
   window.gdScene._state.yVelocity = 0;
 };
 
+let isVerticalJump = false;
+let cancelVerticalJump: () => void;
+
 api.onStart(() => {
   window.gdScene._playerWorldX = 0;
   physicsUtils.setPlayerSpeed(0);
@@ -144,6 +147,8 @@ api.onStart(() => {
   const isRightDown = () => rightKey.isDown || dKey.isDown;
 
   const updateMovement = () => {
+    const oldDireciton = window._platformer.playerDirection;
+
     if (isLeftDown() && isRightDown()) {
       window._platformer.playerDirection = 0;
     } else if (isLeftDown()) {
@@ -157,6 +162,15 @@ api.onStart(() => {
     physicsUtils.setPlayerSpeed(
       defaultSpeed * window._platformer.playerDirection,
     );
+
+    if (
+      !window.gdScene._state.onGround && isVerticalJump &&
+      window._platformer.playerDirection != oldDireciton
+    ) {
+      isVerticalJump = false;
+      cancelVerticalJump();
+      window.gdScene._player.runRotateAction();
+    }
   };
 
   [leftKey, rightKey, aKey, dKey].forEach((key) => {
@@ -189,7 +203,13 @@ api.onStart(() => {
           defaultSpeed * window._platformer.playerDirection,
         );
 
-        if (window._platformer.playerDirection != oldDireciton) {
+        if (
+          isVerticalJump &&
+          window._platformer.playerDirection != oldDireciton &&
+          !window.gdScene._state.onGround
+        ) {
+          isVerticalJump = false;
+          cancelVerticalJump();
           window.gdScene._player.runRotateAction();
         }
       }, "before");
@@ -205,16 +225,22 @@ api.patchMethod("updateJump", (code) => {
 });
 
 window._platformer.onJump = () => {
+  isVerticalJump = window._platformer.playerDirection == 0;
+
   if (window._platformer.playerDirection != 0) return;
 
+  const chains: Phaser.Tweens.TweenChain[] = [];
+
+  const validLayers: Phaser.GameObjects.Image[] = [];
   for (const layer of window.gdScene._player._playerLayers) {
     if (!layer) continue;
+    validLayers.push(layer.sprite);
 
     if (
       (window.gdScene._player._rotation / Math.PI) % 1 > 0.6 ||
       (window.gdScene._player._rotation / Math.PI) % 1 < 0.4
     ) {
-      window.gdScene.tweens.chain({
+      chains.push(window.gdScene.tweens.chain({
         targets: layer.sprite,
         tweens: [
           {
@@ -236,9 +262,9 @@ window._platformer.onJump = () => {
             ease: Phaser.Math.Easing.Sine.InOut,
           },
         ],
-      });
+      }));
     } else {
-      window.gdScene.tweens.chain({
+      chains.push(window.gdScene.tweens.chain({
         targets: layer.sprite,
         tweens: [
           {
@@ -260,7 +286,18 @@ window._platformer.onJump = () => {
             ease: Phaser.Math.Easing.Sine.InOut,
           },
         ],
-      });
+      }));
     }
   }
+
+  cancelVerticalJump = () => {
+    chains.forEach((chain) => chain.stop());
+    window.gdScene.tweens.add({
+      targets: validLayers,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 125,
+      ease: Phaser.Math.Easing.Sine.InOut,
+    });
+  };
 };
