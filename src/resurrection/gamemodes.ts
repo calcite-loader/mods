@@ -232,21 +232,41 @@ export const gamemodes: Record<GameMode, GameModeInfo> = {
       }
     },
     portal: "portal_ball",
-    enterGamemode(portalY) {
-      window.gdScene._state.onGround = false;
-      window.gdScene._state.canJump = false;
-      window.gdScene._state.isJumping = false;
-      window.gdScene._state.isFlying = false;
-      window.gdScene._player.stopRotation();
-      window.gdScene._player._rotation = 0;
-      window.gdScene.toggleGlitter(false);
-      window.gdScene._player._streak.stop();
-      window.gdScene._player._streak.reset();
-      window.gdScene._state.y = portalY;
-      window.gdScene._level.setFlyMode(true, portalY);
+    enterGamemode() {
+      const player = window.gdScene._player;
+      const level = window.gdScene._level;
 
-      window.gdScene._player.setCubeVisible(false);
-      window.gdScene._player.setShipVisible(false);
+      player.p.onGround = false;
+      player.p.canJump = false;
+      player.p.isJumping = false;
+      player.p.isFlying = false;
+      player.stopRotation();
+      player._rotation = 0;
+      player._streak.stop();
+      player._streak.reset();
+      window.gdScene.toggleGlitter(false);
+
+      player.setCubeVisible(false);
+      player.setShipVisible(false);
+
+      const height = 480;
+      const center = (window.gdScene._state.y) / (height / 2);
+      level._flyFloorY = Math.max(0, Math.floor(center / 60) * 60);
+      level._flyCeilingY = level._flyFloorY + height;
+
+      level._flyGroundActive = true;
+      level.flyCameraTarget = Math.max(
+        0,
+        (level._flyFloorY + height / 2) - 200,
+      );
+
+      level._groundAnimating = true;
+      level._groundAnimDuration = 0.5;
+      level._groundAnimTime = 0;
+      level._groundAnimTo = 1;
+      level._groundAnimFrom = level._groundTargetValue;
+      level._ceilingStartScreenY = 0;
+      level._groundStartScreenY = 460 + window.gdScene._cameraY;
     },
     orbInfo: {
       [Orb.YELLOW]: { yVel: ballJumpForce },
