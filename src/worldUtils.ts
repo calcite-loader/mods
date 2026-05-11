@@ -32,7 +32,7 @@ declare global {
         levelObject: any, // TODO: type
         x: number,
         y: number,
-      ) => void;
+      ) => GameObjectType;
       runConditionCallback: (index: number, type: string) => boolean;
       runHandleCollisionCallback: (
         index: number,
@@ -115,7 +115,7 @@ export type AddColliderCallback = (
   levelObject: any,
   x: number,
   y: number,
-) => void;
+) => GameObjectType;
 export type ConditionCallback = (type: string) => boolean;
 /**
  * @return Whether or not the rest of the collision checks should be skipped.
@@ -149,7 +149,23 @@ window._worldUtils.runAddColliderCallback = (
   x,
   y,
 ) => {
-  newColliderTypes[index]?.addCollider(definition, levelObject, x, y);
+  const object = newColliderTypes[index]!.addCollider(
+    definition,
+    levelObject,
+    x,
+    y,
+  );
+
+  // 90 degree rotation
+  if ((levelObject.rot / 90) % 2 == 1) {
+    const originalW = object.w;
+    object.w = object.h;
+    object.h = originalW;
+  }
+
+  window.gdScene._level.objects.push(object);
+  window.gdScene._level._addCollisionToSection(object);
+  return object;
 };
 window._worldUtils.runConditionCallback = (index, type) => {
   const condition = newColliderTypes[index]!.condition;
@@ -181,6 +197,12 @@ api.patchMethod("_spawnLevelObjects", (code) => {
       `else if (${definitionVarName}.type === "${colliderData.objectType}") { window._worldUtils.runAddColliderCallback(${index}, ${definitionVarName}, ${levelObjName}, ${xName}, ${yName}) }`
     ).join("")
   } ${code.slice(index)}`;
+
+  // 90 degree object rotations
+  code = code.replaceAll(
+    /((\w+)\s*=\s*new\s+(?!(?:Set|CustomEvent)\s*\()\w+\(\w+,\w+,\w+,\w+,\w+\);)/g,
+    `$1 if ((${levelObjName}.rot / 90) % 2 == 1) { const originalW = $2.w; $2.w = $2.h; $2.h = originalW; };`,
+  );
 
   return code;
 });

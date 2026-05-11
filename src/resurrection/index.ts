@@ -85,8 +85,7 @@ worldUtils.registerNewColliderType(
       definition.gridH * 60,
     ) as GameObject & { _objId: number };
     object._objId = levelObject.id;
-    window.gdScene._level.objects.push(object);
-    window.gdScene._level._addCollisionToSection(object);
+    return object;
   },
   ((object: GameObject & { _objId: number }) => {
     if (object.activated) return false;
@@ -121,12 +120,11 @@ worldUtils.registerNewColliderType(
       "jump_ring",
       x,
       y,
-      definition.gridW * 60 * 1.5,
-      definition.gridH * 60 * 1.5,
+      definition.gridW * 60,
+      definition.gridH * 60,
     ) as GameObject & { _objId: number };
     object._objId = levelObject.id;
-    window.gdScene._level.objects.push(object);
-    window.gdScene._level._addCollisionToSection(object);
+    return object;
   },
   ((object: GameObject & { _objId: number }) => {
     if (!object.activated && queueJump && window.gdScene._state.upKeyDown) {
@@ -169,17 +167,16 @@ worldUtils.registerNewColliderType(
       90,
       definition.gridH * 60,
     );
-    window.gdScene._level.objects.push(object);
-    window.gdScene._level._addCollisionToSection(object);
+    return object;
   },
   (object: GameObject & { portalY?: number }) => {
     if (object.activated) return false;
     object.activated = true;
 
     if (object.type === "portal_gravity_normal") {
-      flipGravity(true, 0.6);
+      flipGravity(true);
     } else if (object.type === "portal_gravity_flip") {
-      flipGravity(false, 0.6);
+      flipGravity(false);
     } else {
       for (const [type, info] of Object.entries(gamemodes)) {
         if (info.portal === object.type && info.enterGamemode) {
