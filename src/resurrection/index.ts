@@ -137,12 +137,12 @@ worldUtils.registerNewColliderType(
 
       const orbInfo = gamemodes[gamemode].orbInfo[object._objId as Orb];
       if (orbInfo) {
+        const fm = window.gdScene._player.flipMod();
         if (orbInfo.flipBefore) {
           flipGravity(!window.gdScene._state.gravityFlipped);
         }
         if (orbInfo.yVel) {
-          window.gdScene._state.yVelocity = window.gdScene._player.flipMod() *
-            orbInfo.yVel;
+          window.gdScene._state.yVelocity = fm * orbInfo.yVel;
         }
         window.gdScene._player.runRotateAction();
         if (orbInfo.flipAfter) {
