@@ -29,6 +29,8 @@ export interface LevelObject {
   name: string;
   description: string;
   levelstring: string;
+  customSong?: number;
+  officialSong?: number;
 }
 
 const parseLevelObject = (data: string): LevelObject | null => {
@@ -50,6 +52,8 @@ const parseLevelObject = (data: string): LevelObject | null => {
     name: map["2"]!,
     description: atob(map["3"]!),
     levelstring: map["4"]!,
+    customSong: map["35"] ? parseInt(map["35"]) : undefined,
+    officialSong: map["12"] ? parseInt(map["12"]) : undefined,
   };
 };
 
