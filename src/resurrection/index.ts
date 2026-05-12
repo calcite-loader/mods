@@ -240,7 +240,7 @@ api.patchMethod("checkCollisions", (code) => {
 
 // Fix player rendering when gravity flipped
 api.patchMethod("syncSprites", (code) => {
-  const offsetVarName = code.match(/const (_0x[\da-f]+)=0xa,/)?.[1]!;
+  const offsetVarName = code.match(/const\s+(_0x[\da-f]+)=0xa,/)?.[1]!;
 
   const index1 = code.lastIndexOf(offsetVarName);
   code = code.slice(0, index1) +
